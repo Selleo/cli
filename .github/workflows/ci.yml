@@ -3,7 +3,12 @@ name: Test and release
 permissions:
   contents: write
 
-on: [push]
+on:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*'
 
 jobs:
   test:
@@ -19,6 +24,7 @@ jobs:
       - name: Run tests
         run: |
           go test -v ./...
+
   release:
     runs-on: ubuntu-latest
     needs: test
@@ -34,6 +40,14 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17.1
+      - 
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+      -
+        name: Prepare verison for go embed
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" > version.txt
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2

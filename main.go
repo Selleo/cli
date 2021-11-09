@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Selleo/cli/selleo"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -22,6 +23,14 @@ type AwsEcsDeployInput struct {
 func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
+			{
+				Name:  "version",
+				Usage: "Prints CLI verison",
+				Action: func(c *cli.Context) error {
+					fmt.Fprintf(c.App.Writer, "%s\n", selleo.Version)
+					return nil
+				},
+			},
 			{
 				Name:  "aws",
 				Usage: "AWS cloud commands",
