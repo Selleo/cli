@@ -44,6 +44,8 @@ jobs:
         name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
+        with:
+          images: Selleo/cli
       -
         name: Prepare verison for go embed
         run: |
