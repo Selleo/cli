@@ -1,7 +1,7 @@
 builds:
   -
     ldflags:
-      - -s -w 
+      - -s -w -X github.com/Selleo/cli/selleo.Version={{.Tag}}
     goarch:
       - amd64
       - arm64
