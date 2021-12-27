@@ -10,6 +10,20 @@ Deploy new docker image to ECS cluster and service. This will create a new task 
 selleo aws ecs deploy --cluster CLUSTER_ID --service SERVICE_NAME --docker-image DOCKER_IMAGE --region AWS_REGION
 ```
 
+### Secrets
+
+Get all the secrets and export them in shell:
+
+```
+$(selleo aws secrets export --region REGION --id SECRET_ID)
+```
+
+And new secret (KEY/VALUE are positional arguments):
+
+```
+aws secrets set --region REGION --id SECRET_ID  KEY VALUE
+```
+
 
 ## About Selleo
 
