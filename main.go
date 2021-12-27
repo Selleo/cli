@@ -53,6 +53,33 @@ func main() {
 									return nil
 								},
 							},
+							{
+								Name:  "set",
+								Usage: "Sets key value secret",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+									&cli.StringFlag{Name: "id", Usage: "Secrets ID", Required: true},
+								},
+								ArgsUsage: "KEY VALUE",
+								Action: func(c *cli.Context) error {
+									if c.NArg() != 2 {
+										return fmt.Errorf("Invalid number of arguments. Missing KEY and VALUE.")
+									}
+									k, v := c.Args().Get(0), c.Args().Get(1)
+
+									input := &awscmd.InputSecretsPut{
+										Region:     c.String("region"),
+										ID:         c.String("id"),
+										NewSecrets: map[string]string{k: v},
+									}
+									_, err := awscmd.SecretsPut(context.TODO(), input)
+									if err != nil {
+										return err
+									}
+
+									return nil
+								},
+							},
 						},
 					},
 					{
