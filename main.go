@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Selleo/cli/selleo"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
 )
@@ -18,6 +21,11 @@ type AwsEcsDeployInput struct {
 	Cluster     *string
 	Service     *string
 	DockerImage *string
+}
+
+type AwsSecretsManagerExportInput struct {
+	Region *string
+	ID     *string
 }
 
 func main() {
@@ -35,6 +43,54 @@ func main() {
 				Name:  "aws",
 				Usage: "AWS cloud commands",
 				Subcommands: []*cli.Command{
+					{
+						Name:  "secrets",
+						Usage: "Secrets manager",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "export",
+								Usage: "Export secrets for shell",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+									&cli.StringFlag{Name: "id", Usage: "Secrets ID", Required: true},
+								},
+								Action: func(c *cli.Context) error {
+									actionInput := AwsSecretsManagerExportInput{
+										Region: aws.String(c.String("region")),
+										ID:     aws.String(c.String("id")),
+									}
+									sess, err := session.NewSession(&aws.Config{Region: actionInput.Region})
+									if err != nil {
+										return fmt.Errorf("Failed to initiate new session: %w", err)
+									}
+
+									svc := secretsmanager.New(sess, aws.NewConfig().WithRegion(*actionInput.Region))
+									input := &secretsmanager.GetSecretValueInput{
+										SecretId:     actionInput.ID,
+										VersionStage: aws.String("AWSCURRENT"),
+									}
+									result, err := svc.GetSecretValue(input)
+									if err != nil {
+										return fmt.Errorf("Failed to get secret value: %w", err)
+									}
+									if result.SecretString != nil {
+										var kv map[string]string
+										err = json.NewDecoder(strings.NewReader(*result.SecretString)).Decode(&kv)
+										if err != nil {
+											return fmt.Errorf("Failed to decode secrets into key-value map: %w", err)
+										}
+										for k, v := range kv {
+											escaped := strings.ReplaceAll(v, `"`, `\"`)
+											fmt.Fprint(c.App.Writer, "export ", k, "=", `"`, escaped, `"`, "\n")
+										}
+									} else {
+										return fmt.Errorf("Failed to fetch secret value (SecretString is empty): %w", err)
+									}
+									return nil
+								},
+							},
+						},
+					},
 					{
 						Name:  "ecs",
 						Usage: "Elastic Container Service",
