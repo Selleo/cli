@@ -15,15 +15,19 @@ selleo aws ecs deploy --cluster CLUSTER_ID --service SERVICE_NAME --docker-image
 Get all the secrets and export them in shell:
 
 ```
-$(selleo aws secrets export --region REGION --id SECRET_ID)
+$(selleo aws secrets kv export --region REGION --id SECRET_ID)
 ```
 
 And new secret (KEY/VALUE are positional arguments):
 
 ```
-aws secrets set --region REGION --id SECRET_ID  KEY VALUE
+aws secrets kv set --region REGION --id SECRET_ID  KEY VALUE
 ```
 
+Get binary secret:
+```
+aws secrets bin get --region REGION --id SECRET_ID
+```
 
 ## About Selleo
 
