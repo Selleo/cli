@@ -28,6 +28,30 @@ func main() {
 				Usage: "AWS cloud commands",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "configure",
+						Usage: "Configure AWS profile",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+							&cli.StringFlag{Name: "profile", Usage: "AWS profile", Required: true},
+							&cli.StringFlag{Name: "key", Usage: "Access key ID", Required: true},
+							&cli.StringFlag{Name: "secret", Usage: "Secret access key", Required: true},
+						},
+						Action: func(c *cli.Context) error {
+							input := &awscmd.InputConfigure{
+								Region:    c.String("region"),
+								Profile:   c.String("profile"),
+								AccessKey: c.String("key"),
+								SecretKey: c.String("secret"),
+							}
+							_, err := awscmd.Configure(context.TODO(), input)
+							if err != nil {
+								return err
+							}
+
+							return nil
+						},
+					},
+					{
 						Name:  "secrets",
 						Usage: "Secrets manager",
 						Subcommands: []*cli.Command{
