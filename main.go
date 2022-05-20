@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"regexp"
 
 	"github.com/Selleo/cli/awscmd"
+	"github.com/Selleo/cli/console"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
 	"github.com/urfave/cli/v2"
@@ -183,9 +187,32 @@ func main() {
 		},
 	}
 
+	dir, _ := os.Getwd()
+	paths, _ := collectFiles(dir)
+	fmt.Println(paths)
+
 	err := app.Run(os.Args)
 	if err != nil {
 		fmt.Fprintf(app.ErrWriter, "%s%v%s\n", ctc.ForegroundRed, err, ctc.Reset)
 		os.Exit(1)
 	}
+
+	for region, details := range console.Regions {
+		fmt.Printf("%s %-10s: %s\n", details[0], details[1], region)
+	}
+}
+
+func collectFiles(dir string) ([]string, error) {
+	files := []string{}
+	ignorePattern := regexp.MustCompile("(\\.git|\\.github|\\.gitignore)")
+	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+		if ignorePattern.Match([]byte(path)) {
+			return fs.SkipDir
+		}
+		files = append(files, path)
+		return nil
+	})
+
+	return files, err
+
 }
