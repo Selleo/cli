@@ -161,13 +161,33 @@ func main() {
 										DockerImage: c.String("docker-image"),
 									}
 									out, err := awscmd.EcsDeploy(context.TODO(), input)
+									if out != nil {
+										fmt.Fprintf(
+											c.App.Writer,
+											"%sNew deployment for service `%s` created%s\n",
+											ctc.ForegroundYellow,
+											out.Service,
+											ctc.Reset,
+										)
+									}
+									if err != nil {
+										return err
+									}
+
+									waitInput := &awscmd.InputEcsDeployWait{
+										Region:      c.String("region"),
+										Cluster:     c.String("cluster"),
+										Service:     c.String("service"),
+										DeploymentID: out.PrimaryDeploymentID,
+									}
+									_, err = awscmd.EcsDeployWait(context.TODO(), waitInput, c.App.Writer)
 									if err != nil {
 										return err
 									}
 
 									fmt.Fprintf(
 										c.App.Writer,
-										"%sNew deployment for service `%s` created%s\n",
+										"%sDeployment for service `%s` finished%s\n",
 										ctc.ForegroundGreen,
 										out.Service,
 										ctc.Reset,
