@@ -178,7 +178,7 @@ func main() {
 										Region:      c.String("region"),
 										Cluster:     c.String("cluster"),
 										Service:     c.String("service"),
-										DeploymentID: out.PrimaryDeploymentID,
+										DeploymentID: out.MonitoredDeploymentID,
 									}
 									_, err = awscmd.EcsDeployWait(context.TODO(), waitInput, c.App.Writer)
 									if err != nil {
@@ -187,7 +187,7 @@ func main() {
 
 									fmt.Fprintf(
 										c.App.Writer,
-										"%sDeployment for service `%s` finished%s\n",
+										"%sDeployment for service `%s` reached stable state%s\n",
 										ctc.ForegroundGreen,
 										out.Service,
 										ctc.Reset,
