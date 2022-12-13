@@ -20,8 +20,8 @@ type InputEcsDeploy struct {
 }
 
 type OuputEcsDeploy struct {
-	Service             string
-	PrimaryDeploymentID string
+	Service               string
+	MonitoredDeploymentID string
 }
 
 func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, error) {
@@ -84,23 +84,23 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, err
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update service with new task revision: %w", err)
 	}
-	var primaryDeployment *ecs.Deployment = nil
+	var monitoredDeployment *ecs.Deployment = nil
 	for _, deployment := range updateOut.Service.Deployments {
 		if *deployment.Status == "PRIMARY" {
-			primaryDeployment = deployment
+			monitoredDeployment = deployment
 			break
 		}
 	}
 
-	if primaryDeployment == nil {
+	if monitoredDeployment == nil {
 		return &OuputEcsDeploy{
 			Service: *updateOut.Service.ServiceName,
 		}, fmt.Errorf("Service %s deployed but couldn't fetch primary deployment status", *updateOut.Service.ServiceName)
 	}
 
 	return &OuputEcsDeploy{
-		Service:             *updateOut.Service.ServiceName,
-		PrimaryDeploymentID: *primaryDeployment.Id,
+		Service:               *updateOut.Service.ServiceName,
+		MonitoredDeploymentID: *monitoredDeployment.Id,
 	}, nil
 }
 
@@ -139,27 +139,27 @@ func EcsDeployWait(ctx context.Context, input *InputEcsDeployWait, w io.Writer) 
 			return nil, fmt.Errorf("Ambigious match, found more than 1 service")
 		}
 
-		var primaryDeployment *ecs.Deployment = nil
+		var monitoredDeployment *ecs.Deployment = nil
 		for _, deployment := range serviceOut.Services[0].Deployments {
 			if *deployment.Id == input.DeploymentID {
-				primaryDeployment = deployment
+				monitoredDeployment = deployment
 				break
 			}
 		}
 
-		if primaryDeployment == nil {
+		if monitoredDeployment == nil {
 			return nil, fmt.Errorf("Failed to monitor service deployment")
 		}
 
-		fmt.Fprintf(w, "%s%d%s Running | %s%d%s Pending | %s%d%s Desired (Attempt %d, retrying in 10s)\n",
-			ctc.ForegroundGreen, *primaryDeployment.RunningCount, ctc.Reset,
-			ctc.ForegroundYellow, *primaryDeployment.PendingCount, ctc.Reset,
-			ctc.ForegroundRed, *primaryDeployment.DesiredCount, ctc.Reset,
+		fmt.Fprintf(w, "%s%d%s Running | %s%d%s Pending | %s%d%s Desired (Check %d, retrying in 10s)\n",
+			ctc.ForegroundGreen, *monitoredDeployment.RunningCount, ctc.Reset,
+			ctc.ForegroundYellow, *monitoredDeployment.PendingCount, ctc.Reset,
+			ctc.ForegroundRed, *monitoredDeployment.DesiredCount, ctc.Reset,
 			attempt,
 		)
 
-		if *primaryDeployment.RolloutState != "IN_PROGRESS" {
-			completed := (*primaryDeployment.RolloutState == "COMPLETED")
+		if *monitoredDeployment.RolloutState != "IN_PROGRESS" {
+			completed := (*monitoredDeployment.RolloutState == "COMPLETED")
 			if completed {
 				return &OuputEcsDeployWait{}, nil
 			} else {
