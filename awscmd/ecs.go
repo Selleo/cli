@@ -24,7 +24,7 @@ type OuputEcsDeploy struct {
 	MonitoredDeploymentID string
 }
 
-func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, error) {
+func EcsDeploy(ctx context.Context, input *InputEcsDeploy, w io.Writer) (*OuputEcsDeploy, error) {
 	sess, err := NewSession(input.Region)
 	if err != nil {
 		return nil, err
@@ -32,6 +32,7 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, err
 	svc := ecs.New(sess)
 
 	// 1. fetch running task
+	fmt.Fprintf(w, "Fetching service definition\n")
 	serviceOut, err := svc.DescribeServicesWithContext(ctx, &ecs.DescribeServicesInput{
 		Cluster:  aws.String(input.Cluster),
 		Services: []*string{aws.String(input.Service)},
@@ -55,6 +56,7 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, err
 	}
 
 	// 2. build new task definition
+	fmt.Fprintf(w, "Fetching task definition\n")
 	taskDefinitionOut, err := svc.DescribeTaskDefinitionWithContext(ctx, &ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: taskDefinition,
 	})
@@ -66,9 +68,24 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, err
 	}
 
 	// 3. register new task revision
+	fmt.Fprintf(w, "Registering new task revision with new docker image\n")
 	registerOut, err := svc.RegisterTaskDefinitionWithContext(ctx, &ecs.RegisterTaskDefinitionInput{
-		ContainerDefinitions: containerDefinitions,
-		Family:               taskDefinitionOut.TaskDefinition.Family,
+		ContainerDefinitions:    containerDefinitions,
+		Cpu:                     taskDefinitionOut.TaskDefinition.Cpu,
+		EphemeralStorage:        taskDefinitionOut.TaskDefinition.EphemeralStorage,
+		ExecutionRoleArn:        taskDefinitionOut.TaskDefinition.ExecutionRoleArn,
+		Family:                  taskDefinitionOut.TaskDefinition.Family,
+		InferenceAccelerators:   taskDefinitionOut.TaskDefinition.InferenceAccelerators,
+		IpcMode:                 taskDefinitionOut.TaskDefinition.IpcMode,
+		Memory:                  taskDefinitionOut.TaskDefinition.Memory,
+		NetworkMode:             taskDefinitionOut.TaskDefinition.NetworkMode,
+		PidMode:                 taskDefinitionOut.TaskDefinition.PidMode,
+		PlacementConstraints:    taskDefinitionOut.TaskDefinition.PlacementConstraints,
+		ProxyConfiguration:      taskDefinitionOut.TaskDefinition.ProxyConfiguration,
+		RequiresCompatibilities: taskDefinitionOut.TaskDefinition.RequiresCompatibilities,
+		RuntimePlatform:         taskDefinitionOut.TaskDefinition.RuntimePlatform,
+		TaskRoleArn:             taskDefinitionOut.TaskDefinition.TaskRoleArn,
+		Volumes:                 taskDefinitionOut.TaskDefinition.Volumes,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to register new task revision: %w", err)
@@ -76,6 +93,7 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy) (*OuputEcsDeploy, err
 	arn := registerOut.TaskDefinition.TaskDefinitionArn
 
 	// 4. update ecs service with new task arn
+	fmt.Fprintf(w, "Updating service\n")
 	updateOut, err := svc.UpdateServiceWithContext(ctx, &ecs.UpdateServiceInput{
 		Cluster:        aws.String(input.Cluster),
 		Service:        aws.String(input.Service),

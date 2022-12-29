@@ -160,7 +160,7 @@ func main() {
 										Service:     c.String("service"),
 										DockerImage: c.String("docker-image"),
 									}
-									out, err := awscmd.EcsDeploy(context.TODO(), input)
+									out, err := awscmd.EcsDeploy(context.TODO(), input, c.App.Writer)
 									if out != nil {
 										fmt.Fprintf(
 											c.App.Writer,
