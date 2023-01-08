@@ -175,9 +175,9 @@ func main() {
 									}
 
 									waitInput := &awscmd.InputEcsDeployWait{
-										Region:      c.String("region"),
-										Cluster:     c.String("cluster"),
-										Service:     c.String("service"),
+										Region:       c.String("region"),
+										Cluster:      c.String("cluster"),
+										Service:      c.String("service"),
 										DeploymentID: out.MonitoredDeploymentID,
 									}
 									_, err = awscmd.EcsDeployWait(context.TODO(), waitInput, c.App.Writer)
@@ -190,6 +190,37 @@ func main() {
 										"%sDeployment for service `%s` reached stable state%s\n",
 										ctc.ForegroundGreen,
 										out.Service,
+										ctc.Reset,
+									)
+
+									return nil
+								},
+							},
+							{
+								Name:  "run",
+								Usage: "Starts a new one-off task",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
+									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
+									&cli.StringFlag{Name: "command", Usage: "One-off command to run", Required: true},
+								},
+								Action: func(c *cli.Context) error {
+									runTaskInput := &awscmd.InputEcsRunTask{
+										Region:        c.String("region"),
+										Cluster:       c.String("cluster"),
+										Service:       c.String("service"),
+										OneOffCommand: c.String("command"),
+									}
+									out, err := awscmd.EcsRunTask(context.TODO(), runTaskInput, c.App.Writer)
+									if err != nil {
+										return err
+									}
+									fmt.Fprintf(
+										c.App.Writer,
+										"%sNew task started ID: `%s`%s\n",
+										ctc.ForegroundGreen,
+										out.ID,
 										ctc.Reset,
 									)
 

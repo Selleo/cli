@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -188,4 +189,44 @@ func EcsDeployWait(ctx context.Context, input *InputEcsDeployWait, w io.Writer) 
 		time.Sleep(10 * time.Second)
 		attempt++
 	}
+}
+
+func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*OuputEcsRunTask, error) {
+	sess, err := NewSession(input.Region)
+	if err != nil {
+		return nil, err
+	}
+	svc := ecs.New(sess)
+
+	taskName := fmt.Sprint(input.Service, "-", input.OneOffCommand)
+
+	out, err := svc.RunTask(&ecs.RunTaskInput{
+		Cluster:        aws.String(input.Cluster),
+		TaskDefinition: aws.String(taskName),
+		Count:          aws.Int64(1),
+	})
+	if err != nil {
+		return &OuputEcsRunTask{}, fmt.Errorf("Can't runTask: %v", err)
+	}
+
+	arn := *out.Tasks[0].TaskArn
+	splits := strings.Split(arn, "/")
+	id := splits[len(splits)-1]
+
+	return &OuputEcsRunTask{
+		ARN: arn,
+		ID:  id,
+	}, nil
+}
+
+type InputEcsRunTask struct {
+	Region        string
+	Cluster       string
+	Service       string
+	OneOffCommand string
+}
+
+type OuputEcsRunTask struct {
+	ARN string
+	ID  string
 }
