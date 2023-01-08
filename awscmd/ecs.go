@@ -188,7 +188,7 @@ func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*Oupu
 	}
 	svc := ecs.New(sess)
 
-	taskName := fmt.Sprint(input.Service, "-", input.OneOffCommand)
+	taskName := idOneOff(input.Service, input.OneOffCommand)
 
 	out, err := svc.RunTask(&ecs.RunTaskInput{
 		Cluster:        aws.String(input.Cluster),
