@@ -152,6 +152,7 @@ func main() {
 									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
 									&cli.StringFlag{Name: "docker-image", Usage: "Docker image to replace task definition with", Required: true},
+									&cli.StringSliceFlag{Name: "one-off", Usage: "One-off commands (multiple use of flag allowed)", Required: false},
 								},
 								Action: func(c *cli.Context) error {
 									input := &awscmd.InputEcsDeploy{
@@ -159,6 +160,7 @@ func main() {
 										Cluster:     c.String("cluster"),
 										Service:     c.String("service"),
 										DockerImage: c.String("docker-image"),
+										OneOffs:     c.StringSlice("one-off"),
 									}
 									out, err := awscmd.EcsDeploy(context.TODO(), input, c.App.Writer)
 									if out != nil {
@@ -203,14 +205,14 @@ func main() {
 									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
 									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
-									&cli.StringFlag{Name: "command", Usage: "One-off command to run", Required: true},
+									&cli.StringFlag{Name: "one-off", Usage: "One-off command to run", Required: true},
 								},
 								Action: func(c *cli.Context) error {
 									runTaskInput := &awscmd.InputEcsRunTask{
 										Region:        c.String("region"),
 										Cluster:       c.String("cluster"),
 										Service:       c.String("service"),
-										OneOffCommand: c.String("command"),
+										OneOffCommand: c.String("one-off"),
 									}
 									out, err := awscmd.EcsRunTask(context.TODO(), runTaskInput, c.App.Writer)
 									if err != nil {
