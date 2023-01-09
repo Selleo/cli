@@ -220,7 +220,24 @@ func main() {
 									}
 									fmt.Fprintf(
 										c.App.Writer,
-										"%sNew task started ID: `%s`%s\n",
+										"%sNew task started: `%s`%s\n",
+										ctc.ForegroundGreen,
+										out.ID,
+										ctc.Reset,
+									)
+									waitInput := &awscmd.InputEcsTaskWait{
+										Region:  c.String("region"),
+										Cluster: c.String("cluster"),
+										ARN:     out.ARN,
+									}
+									_, err = awscmd.EcsTaskWait(context.TODO(), waitInput, c.App.Writer)
+									if err != nil {
+										return err
+									}
+
+									fmt.Fprintf(
+										c.App.Writer,
+										"%sTask `%s` has stopped%s\n",
 										ctc.ForegroundGreen,
 										out.ID,
 										ctc.Reset,

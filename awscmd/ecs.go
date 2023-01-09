@@ -221,6 +221,50 @@ type OuputEcsRunTask struct {
 	ID  string
 }
 
+func EcsTaskWait(ctx context.Context, input *InputEcsTaskWait, w io.Writer) (*OuputEcsTaskWait, error) {
+	sess, err := NewSession(input.Region)
+	if err != nil {
+		return nil, err
+	}
+	svc := ecs.New(sess)
+
+	attempt := 1
+	for {
+		result, err := svc.DescribeTasksWithContext(ctx, &ecs.DescribeTasksInput{
+			Cluster: aws.String(input.Cluster),
+			Tasks:   []*string{aws.String(input.ARN)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		task := result.Tasks[0]
+		status := *task.LastStatus
+
+		if status == "STOPPED" {
+			break
+		} else {
+			fmt.Fprintf(w, "Waiting to finish (`%s%s%s`).. (Check %d, retrying in 3s)\n",
+				ctc.ForegroundYellow, status, ctc.Reset,
+				attempt,
+			)
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+
+	return &OuputEcsTaskWait{}, nil
+}
+
+type InputEcsTaskWait struct {
+	Region  string
+	Cluster string
+	ARN     string
+}
+
+type OuputEcsTaskWait struct {
+}
+
 func ecsRegisterTaskDefinition(svc *ecs.ECS, ctx context.Context, input *inputRegisterTaskDefinition, w io.Writer) (*outputRegisterTaskDefinition, error) {
 	fmt.Fprintf(w, "  Fetching task definition\n")
 	taskDefinitionOut, err := svc.DescribeTaskDefinitionWithContext(ctx, &ecs.DescribeTaskDefinitionInput{
