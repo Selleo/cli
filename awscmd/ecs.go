@@ -242,6 +242,22 @@ func EcsTaskWait(ctx context.Context, input *InputEcsTaskWait, w io.Writer) (*Ou
 		status := *task.LastStatus
 
 		if status == "STOPPED" {
+			success := true
+			for _, c := range task.Containers {
+				fmt.Fprintf(w, "Container `%s` exit code is %d\n",
+					*c.Name,
+					*c.ExitCode,
+				)
+				if *c.ExitCode != 0 {
+					success = false
+				}
+			}
+			if !success {
+				fmt.Fprintf(w, "%sStopped reason: %s%s\n",
+					ctc.ForegroundRed, *task.StoppedReason, ctc.Reset,
+				)
+				return nil, fmt.Errorf("Task exited with non-zero code")
+			}
 			break
 		} else {
 			fmt.Fprintf(w, "Waiting to finish (`%s%s%s`).. (Check %d, retrying in 3s)\n",
