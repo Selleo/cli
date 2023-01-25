@@ -287,6 +287,10 @@ func ecsRegisterTaskDefinition(svc *ecs.ECS, ctx context.Context, input *inputRe
 		TaskDefinition: aws.String(input.TaskDefinitionOrARN),
 	})
 
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch task definition: %v", err)
+	}
+
 	containerDefinitions := []*ecs.ContainerDefinition{}
 	for _, container := range taskDefinitionOut.TaskDefinition.ContainerDefinitions {
 		container.Image = aws.String(input.DockerImage)
