@@ -28,6 +28,27 @@ func main() {
 				Usage: "AWS cloud commands",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "export",
+						Usage: "Export SSM",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+							&cli.StringFlag{Name: "path", Usage: "SSM Path", Required: true},
+						},
+						Action: func(c *cli.Context) error {
+							input := &awscmd.InputSSMGetParameters{
+								Region: c.String("region"),
+								Path:   c.String("path"),
+							}
+							out, err := awscmd.SSMGetParameters(context.TODO(), input)
+							if err != nil {
+								return err
+							}
+							shellcmd.KeyValueToExports(c.App.Writer, out.Parameters)
+
+							return nil
+						},
+					},
+					{
 						Name:  "configure",
 						Usage: "Configure AWS profile",
 						Flags: []cli.Flag{
@@ -49,95 +70,6 @@ func main() {
 							}
 
 							return nil
-						},
-					},
-					{
-						Name:  "secrets",
-						Usage: "Secrets manager",
-						Subcommands: []*cli.Command{
-							{
-								Name:  "kv",
-								Usage: "Key-value secrets",
-								Subcommands: []*cli.Command{
-									{
-										Name:  "export",
-										Usage: "Export secrets for shell",
-										Flags: []cli.Flag{
-											&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
-											&cli.StringFlag{Name: "id", Usage: "Secrets ID", Required: true},
-										},
-										Action: func(c *cli.Context) error {
-											input := &awscmd.InputSecretsAll{
-												Region: c.String("region"),
-												ID:     c.String("id"),
-											}
-											out, err := awscmd.SecretsAll(context.TODO(), input)
-											if err != nil {
-												return err
-											}
-
-											shellcmd.KeyValueToExports(c.App.Writer, out.Secrets)
-
-											return nil
-										},
-									},
-									{
-										Name:  "set",
-										Usage: "Sets key value secret",
-										Flags: []cli.Flag{
-											&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
-											&cli.StringFlag{Name: "id", Usage: "Secrets ID", Required: true},
-										},
-										ArgsUsage: "KEY VALUE",
-										Action: func(c *cli.Context) error {
-											if c.NArg() != 2 {
-												return fmt.Errorf("Invalid number of arguments. Missing KEY and VALUE.")
-											}
-											k, v := c.Args().Get(0), c.Args().Get(1)
-
-											input := &awscmd.InputSecretsPut{
-												Region:     c.String("region"),
-												ID:         c.String("id"),
-												NewSecrets: map[string]string{k: v},
-											}
-											_, err := awscmd.SecretsPut(context.TODO(), input)
-											if err != nil {
-												return err
-											}
-
-											return nil
-										},
-									},
-								},
-							},
-							{
-								Name:  "bin",
-								Usage: "binary secrets",
-								Subcommands: []*cli.Command{
-									{
-										Name:  "get",
-										Usage: "Get binary secret",
-										Flags: []cli.Flag{
-											&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
-											&cli.StringFlag{Name: "id", Usage: "Secrets ID", Required: true},
-										},
-										Action: func(c *cli.Context) error {
-											input := &awscmd.InputSecretsBinaryGet{
-												Region: c.String("region"),
-												ID:     c.String("id"),
-											}
-											out, err := awscmd.SecretsBinaryGet(context.TODO(), input)
-											if err != nil {
-												return err
-											}
-
-											c.App.Writer.Write(out.Bytes)
-
-											return nil
-										},
-									},
-								},
-							},
 						},
 					},
 					{
