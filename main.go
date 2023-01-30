@@ -28,6 +28,33 @@ func main() {
 				Usage: "AWS cloud commands",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "dev",
+						Usage: "Start a service with SSM secrets",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+							&cli.StringFlag{Name: "path", Usage: "SSM Path", Required: true},
+						},
+						Action: func(c *cli.Context) error {
+							input := &awscmd.InputSSMGetParameters{
+								Region: c.String("region"),
+								Path:   c.String("path"),
+							}
+							fmt.Fprintf(
+								c.App.Writer,
+								"%sFetching secrets%s\n",
+								ctc.ForegroundYellow,
+								ctc.Reset,
+							)
+							out, err := awscmd.SSMGetParameters(context.TODO(), input)
+							if err != nil {
+								return err
+							}
+							shellcmd.Pipe(context.TODO(), c.App.Writer, out.Parameters, c.Args().Slice())
+
+							return nil
+						},
+					},
+					{
 						Name:  "export",
 						Usage: "Export SSM",
 						Flags: []cli.Flag{
