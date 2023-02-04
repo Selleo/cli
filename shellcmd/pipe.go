@@ -12,6 +12,9 @@ import (
 )
 
 func Pipe(ctx context.Context, w io.Writer, secrets map[string]string, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("You need to pass a command to run")
+	}
 	cmdName := args[0]
 	cmdArgs := args[1:]
 	cmd := exec.CommandContext(ctx, cmdName, cmdArgs...)

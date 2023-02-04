@@ -50,9 +50,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							shellcmd.Pipe(context.TODO(), c.App.Writer, out.Parameters, c.Args().Slice())
-
-							return nil
+							return shellcmd.Pipe(context.TODO(), c.App.Writer, out.Parameters, c.Args().Slice())
 						},
 					},
 					{
