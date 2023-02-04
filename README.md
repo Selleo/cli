@@ -10,12 +10,12 @@ or download binary for your system.
 
 ## AWS
 
-### ECS
+### Dev
 
-Deploy new docker image to ECS cluster and service. This will create a new task revision and create a deployment.
+You can fetch secrets from AWS store parameters and run the command:
 
 ```
-selleo aws ecs deploy --cluster CLUSTER_ID --service SERVICE_NAME --docker-image DOCKER_IMAGE --region AWS_REGION
+selleo aws dev --region eu-central-1 --path /office/dev/api npm run start
 ```
 
 ## About Selleo
