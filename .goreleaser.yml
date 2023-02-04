@@ -6,7 +6,7 @@ builds:
       - amd64
       - arm64
     goarm:
-      - 7
+      - "7"
     ignore:
       - goos: linux
         goarch: arm64
@@ -15,3 +15,16 @@ builds:
       - prod
 
     binary: selleo
+
+brews:
+  - name: selleo
+    goarm: "7"
+    tap:
+      owner: Selleo
+      name: homebrew-cli
+      branch: main
+      token: "{{ .Env.HOMEBREW_CLI_GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: https://github.com/selleo/cli
+    description: Selleo's CLI for better developer experience.
+    license: MIT

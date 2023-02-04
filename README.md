@@ -1,5 +1,13 @@
 # cli
 
+Install view homebrew:
+```
+brew tap Selleo/cli
+brew install selleo
+```
+
+or download binary for your system.
+
 ## AWS
 
 ### ECS
