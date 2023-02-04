@@ -41,8 +41,9 @@ func main() {
 							}
 							fmt.Fprintf(
 								c.App.Writer,
-								"%sFetching secrets%s\n",
+								"%sFetching secrets %s%s\n",
 								ctc.ForegroundYellow,
+								fmt.Sprint(input.Path, "/*"),
 								ctc.Reset,
 							)
 							out, err := awscmd.SSMGetParameters(context.TODO(), input)
