@@ -1,6 +1,6 @@
 # cli
 
-Install view homebrew:
+Install via homebrew:
 ```
 brew tap Selleo/cli
 brew install selleo
