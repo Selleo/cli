@@ -16,7 +16,7 @@ type GitHub struct {
 }
 
 func (g *GitHub) Render(t *TemplateRenderer) error {
-	err := os.MkdirAll(".github/workflows", 0644)
+	err := os.MkdirAll(".github/workflows", 0755)
 	if err != nil {
 		return err
 	}
