@@ -60,16 +60,22 @@ func main() {
 							{
 								Name:  "frontend",
 								Usage: "Generate GitHub actions for CDN",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "workdir", Usage: "Working directory (source root)", Required: true},
+									&cli.StringFlag{Name: "domain", Usage: "Application domain", Required: true},
+									&cli.StringFlag{Name: "region", Usage: "AWS Region for S3", Required: true},
+									&cli.StringFlag{Name: "app_id", Usage: "App ID specified in Terraform", Required: true},
+								},
 								Action: func(c *cli.Context) error {
 									tpls := generators.New(embededTemplates)
 									gen := generators.GitHub{
 										CITagTrigger: false,
 										CIBranch:     "main",
-										CIWorkingDir: "packages/client",
+										CIWorkingDir: c.String("workdir"),
 										Stage:        "staging",
-										Domain:       "selleo.com",
-										Region:       "eu-central-1",
-										AppID:        "website",
+										Domain:       fmt.Sprint("staging.", c.String("domain")),
+										Region:       c.String("region"),
+										AppID:        c.String("app_id"),
 									}
 									if err := gen.Render(tpls); err != nil {
 										return err
@@ -77,11 +83,11 @@ func main() {
 
 									gen = generators.GitHub{
 										CITagTrigger: true,
-										CIWorkingDir: "packages/client",
+										CIWorkingDir: c.String("workdir"),
 										Stage:        "production",
-										Domain:       "selleo.com",
-										Region:       "eu-central-1",
-										AppID:        "website",
+										Domain:       c.String("domain"),
+										Region:       c.String("region"),
+										AppID:        c.String("app_id"),
 									}
 									if err := gen.Render(tpls); err != nil {
 										return err
