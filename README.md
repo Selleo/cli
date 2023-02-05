@@ -18,6 +18,17 @@ You can fetch secrets from AWS store parameters and run the command:
 selleo aws dev --region eu-central-1 --path /office/dev/api npm run start
 ```
 
+### Generators
+
+Generators are used to pre-generate templates that you can furhter adjust.
+
+#### GitHub workflows
+
+Generate staging and production workflows:
+```
+selleo gen github frontend --workdir packages/client --domain selleo.com --region eu-central-1 --app_id website
+```
+
 ## About Selleo
 
 ![selleo](https://raw.githubusercontent.com/Selleo/selleo-resources/master/public/github_footer.png)
