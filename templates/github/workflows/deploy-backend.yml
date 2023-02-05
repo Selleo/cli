@@ -1,0 +1,68 @@
+name: Deploy Backend ({{ .Stage }})
+
+on:
+  push:
+    {{if .CITagTrigger }}
+    tags:
+      - '*'
+    {{end}}
+    {{if not .CITagTrigger }}
+    branches:
+      - {{ .CIBranch }}
+
+    {{end}}
+    paths:
+      - {{ .CIWorkingDir }}/**
+      - .github/workflows/{{ .CIWorkflowFile }}.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: {{ .Stage }}
+      url: https://{{ .Subdomain }}.{{ .Domain }}
+    defaults:
+      run:
+        working-directory: {{ .CIWorkingDir }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: {{ .Region }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_URL: ${{ secrets.AWS_ECR_URL }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_URL:$IMAGE_TAG .
+          docker tag $ECR_URL:$IMAGE_TAG $ECR_URL:latest
+          docker push $ECR_URL:$IMAGE_TAG
+          docker push $ECR_URL:latest
+      - name: Install Selleo CLI
+        uses: jaxxstorm/action-install-gh-release@v1.5.0
+        with:
+          repo: selleo/cli
+          tag: v0.11.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: ECS Deployment
+        env:
+          AWS_REGION: {{ .Region }}
+          ECS_CLUSTER: {{ .ECSCluster }}
+          ECS_SERVICE: {{ .ECSService }}
+          DOCKER_IMAGE: ${{ secrets.AWS_ECR_URL }}:${{ github.sha }}
+        run: selleo aws ecs deploy --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --docker-image $DOCKER_IMAGE {{ range .ECSOneOffs }}--one-off {{ . }} {{end}}
+{{ range .ECSOneOffs }}
+      - name: ECS Run {{.}}
+        env:
+          AWS_REGION: {{ .Region }}
+          ECS_CLUSTER: {{ .ECSCluster }}
+          ECS_SERVICE: {{ .ECSService }}
+        run: selleo aws ecs run --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --one-off {{.}}
+{{end}}
