@@ -5,12 +5,12 @@ COMMAND="${1:-server}"
 
 if [ $COMMAND == "server" ]; then
   echo "Starting server..."
-  echo "TODO"
-{{ range .ECSOneOffs }}
-elif [ $COMMAND == "{{.}}" ]; then
-  echo "Running {{.}}..."
-  echo "TODO"
-{{ end }}
+  {{{ .CmdServer }}}
+{{{ range $k, $v := .OneOffs }}}
+elif [ $COMMAND == "{{{$k}}}" ]; then
+  echo "Running {{{$k}}}..."
+  {{{$v}}}
+{{{ end }}}
 else
   echo "Usage: entrypoint.sh [CMD]"
   exit 1

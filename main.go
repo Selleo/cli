@@ -2,14 +2,21 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"os"
 
 	"github.com/Selleo/cli/awscmd"
+	"github.com/Selleo/cli/generators"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
+)
+
+var (
+	//go:embed templates
+	embededTemplates embed.FS
 )
 
 func main() {
@@ -21,6 +28,69 @@ func main() {
 				Action: func(c *cli.Context) error {
 					fmt.Fprintf(c.App.Writer, "%s\n", selleo.Version)
 					return nil
+				},
+			},
+			{
+				Name:  "gen",
+				Usage: "Generate files from templates",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "docker",
+						Usage: "Docker related generators",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "rails",
+								Usage: "Generate Dockerfile with entrypoint",
+								Action: func(c *cli.Context) error {
+									gen := generators.Docker{
+										CmdServer: "rails server",
+										OneOffs: map[string]string{
+											"migrate": "rails db:migrate",
+										},
+									}
+									return gen.Render(generators.New(embededTemplates))
+								},
+							},
+						},
+					},
+					{
+						Name:  "github",
+						Usage: "GitHub workflows",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "frontend",
+								Usage: "Generate GitHub actions for CDN",
+								Action: func(c *cli.Context) error {
+									tpls := generators.New(embededTemplates)
+									gen := generators.GitHub{
+										CITagTrigger: false,
+										CIBranch:     "main",
+										CIWorkingDir: "packages/client",
+										Stage:        "staging",
+										Domain:       "selleo.com",
+										Region:       "eu-central-1",
+										AppID:        "website",
+									}
+									if err := gen.Render(tpls); err != nil {
+										return err
+									}
+
+									gen = generators.GitHub{
+										CITagTrigger: true,
+										CIWorkingDir: "packages/client",
+										Stage:        "production",
+										Domain:       "selleo.com",
+										Region:       "eu-central-1",
+										AppID:        "website",
+									}
+									if err := gen.Render(tpls); err != nil {
+										return err
+									}
+									return nil
+								},
+							},
+						},
+					},
 				},
 			},
 			{

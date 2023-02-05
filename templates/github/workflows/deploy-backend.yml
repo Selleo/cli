@@ -23,7 +23,7 @@ jobs:
       url: https://{{ .Subdomain }}.{{ .Domain }}
     defaults:
       run:
-        working-directory: {{ .CIWorkingDir }}
+        working-directory: /{{ .CIWorkingDir }}
     steps:
       - uses: actions/checkout@v3
       - name: Configure AWS credentials
