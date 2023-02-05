@@ -4,6 +4,9 @@ Install via homebrew:
 ```
 brew tap Selleo/cli
 brew install selleo
+
+# upgrade
+brew upgrade selleo
 ```
 
 or download binary for your system.
