@@ -1,11 +1,13 @@
 # cli
 
-Install via homebrew:
+Install via homebrew (first time):
 ```
 brew tap Selleo/cli
 brew install selleo
+```
 
-# upgrade
+Upgrade for new release:
+```
 brew upgrade selleo
 ```
 
