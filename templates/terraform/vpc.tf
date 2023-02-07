@@ -3,9 +3,9 @@ module "vpc" {
   version = "0.5.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
   availability_zone_identifiers = ["a", "b", "c"]

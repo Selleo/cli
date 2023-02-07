@@ -2,10 +2,10 @@ terraform {
   required_version = "~> 1.0"
 
   cloud {
-    organization = "{{ .TerraformCloudOrganization }}"
+    organization = "{{{ .TerraformCloudOrganization }}}"
 
     workspaces {
-      name = "{{ .TerraformCloudWorkspace }}"
+      name = "{{{ .TerraformCloudWorkspace }}}"
     }
   }
 

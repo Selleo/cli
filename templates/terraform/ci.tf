@@ -2,7 +2,7 @@ module "iam_ci" {
   source  = "Selleo/iam/aws//modules/user-with-access-key"
   version = "0.6.0"
 
-  name = "{{ .IAMCI }}"
+  name = "{{{ .IAMCI }}}"
 
   groups = [
     module.cluster.deployment_group,
@@ -16,12 +16,12 @@ module "secrets_ci" {
   version = "0.3.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
-  path = "/ci/{{ .Namespace }}/{{ .Stage }}"
+  path = "/ci/{{{ .Namespace }}}/{{{ .Stage }}}"
 
   secrets = {
     AWS_REGION            = var.region

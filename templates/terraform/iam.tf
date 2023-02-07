@@ -2,7 +2,7 @@ module "iam_app" {
   source  = "Selleo/iam/aws//modules/user-with-access-key"
   version = "0.6.0"
 
-  name = "{{ .IAMApp }}"
+  name = "{{{ .IAMApp }}}"
 }
 
 module "iam_app_allow_s3_read_write" {
@@ -10,6 +10,6 @@ module "iam_app_allow_s3_read_write" {
   version = "0.5.0"
 
   bucket_arn  = aws_s3_bucket.storage.arn
-  name_prefix = "{{ .Namespace }}-{{ .Stage }}-{{ .Name }}"
+  name_prefix = "{{{ .Namespace }}}-{{{ .Stage }}}-{{{ .Name }}}"
   users       = [module.iam_app.name]
 }

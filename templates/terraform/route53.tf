@@ -1,5 +1,5 @@
 data "aws_route53_zone" "main" {
-  name = "{{ .Domain }}"
+  name = "{{{ .Domain }}}"
 }
 
 module "dns_load_balancer" {
@@ -7,6 +7,6 @@ module "dns_load_balancer" {
   version = "0.4.0"
 
   lb_arn  = module.lb.id
-  name    = "{{ .Subdomain }}"
+  name    = "{{{ .Subdomain }}}"
   zone_id = data.aws_route53_zone.main.id
 }

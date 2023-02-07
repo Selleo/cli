@@ -3,19 +3,19 @@ module "cluster" {
   version = "0.11.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
-  name_prefix          = "{{ .Namespace }}"
+  name_prefix          = "{{{ .Namespace }}}"
   vpc_id               = module.vpc.id
   subnet_ids           = module.vpc.public_subnets
-  instance_type        = "{{ .ECSInstanceType }}"
+  instance_type        = "{{{ .ECSInstanceType }}}"
   lb_security_group_id = module.lb.security_group_id
 
   autoscaling_group = {
-    min_size         = {{ .ECSMinSize }}
+    min_size         = {{{ .ECSMinSize }}}
     max_size         = 5
     desired_capacity = 1
   }
@@ -26,27 +26,31 @@ module "service" {
   version = "0.11.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
-  name          = "{{ .Name }}"
+  name          = "{{{ .Name }}}"
   vpc_id        = module.vpc.id
   subnet_ids    = module.vpc.public_subnets
   cluster_id    = module.cluster.id
   desired_count = 1
-  secrets       = ["/{{ .Namespace }}/{{ .Stage }}/{{ .Name }}"]
+  secrets       = ["/{{{ .Namespace }}}/{{{ .Stage }}}/{{{ .Name }}}"]
 
   container = {
-    mem_reservation_units = 64
-    cpu_units             = 512
-    mem_units             = 256
+    mem_reservation_units = {{{ .ECSServiceMinMemory }}}
+    cpu_units             = {{{ .ECSServiceCpu }}}
+    mem_units             = {{{ .ECSServiceMaxMemory }}}
 
     image = module.ecr.url_tagged_latest
-    port  = 4000
+    port  = {{{ .ECSServicePort }}}
   }
-  one_off_commands = []
+  one_off_commands = [
+{{{ range .ECSOneOffs -}}}
+    "{{{ . }}}",
+{{{ end -}}}
+  ]
 
   health_check = {
     path    = "/health"

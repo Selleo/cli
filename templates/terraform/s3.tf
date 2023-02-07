@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "storage" {
-  bucket = "{{ .BucketName }}"
+  bucket = "{{{ .BucketName }}}"
 }
 
 resource "aws_s3_bucket_acl" "storage" {

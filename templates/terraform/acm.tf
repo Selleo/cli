@@ -3,12 +3,12 @@ module "acm" {
   version = "0.6.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
-  domain          = "{{ .Subdomain }}"
-  validation_zone = "{{ .Domain }}"
+  domain          = "{{{ .Subdomain }}}"
+  validation_zone = "{{{ .Domain }}}"
   wildcard        = false
 }

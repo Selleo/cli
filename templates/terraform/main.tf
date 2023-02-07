@@ -3,9 +3,9 @@ module "secrets" {
   version = "0.3.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
   secrets = {
@@ -22,9 +22,9 @@ module "secrets_editable" {
   version = "0.3.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
   # ⚠️n new secrets are initialized with value set in terraform,

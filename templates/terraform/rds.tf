@@ -4,9 +4,9 @@ module "db" {
   version = "0.1.0"
 
   context = {
-    namespace = "{{ .Namespace }}"
-    stage     = "{{ .Stage }}"
-    name      = "{{ .Name }}"
+    namespace = "{{{ .Namespace }}}"
+    stage     = "{{{ .Stage }}}"
+    name      = "{{{ .Name }}}"
   }
 
   vpc = {
@@ -15,12 +15,12 @@ module "db" {
     subnet_group = module.vpc.database_subnet_group
   }
 
-  identifier = "{{ .DBIdentifier }}"
-  db_name    = "{{ .DBName }}"
-  db_user    = "{{ .DBUser }}"
+  identifier = "{{{ .DBIdentifier }}}"
+  db_name    = "{{{ .DBName }}}"
+  db_user    = "{{{ .DBUser }}}"
 
-  multi_az          = {{ .DBMultiAZ }}
-  apply_immediately = {{ .DBApplyImmediately }}
+  multi_az          = {{{ .DBMultiAZ }}}
+  apply_immediately = {{{ .DBApplyImmediately }}}
 
   # instance_class         = "db.t4g.micro"
   # engine_version         = "14.5"

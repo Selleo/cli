@@ -58,6 +58,41 @@ func main() {
 						Usage: "GitHub workflows",
 						Subcommands: []*cli.Command{
 							{
+								Name:  "backend",
+								Usage: "Generate GitHub actions for backend",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "workdir", Usage: "Working directory (source root)", Required: true},
+									&cli.StringFlag{Name: "domain", Usage: "Application domain", Required: true},
+									&cli.StringFlag{Name: "subdomain", Usage: "Application subdomain", Required: true},
+									&cli.StringFlag{Name: "region", Usage: "AWS Region for S3", Required: true},
+									&cli.StringFlag{Name: "ecs-cluster", Usage: "ECS cluster name", Required: true},
+									&cli.StringFlag{Name: "ecs-service", Usage: "ECS service name", Required: true},
+									&cli.StringFlag{Name: "stage", Usage: "Application environment", Required: true},
+									/// optional
+									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, DefaultText: "false"},
+									&cli.StringSliceFlag{Name: "one-off", Usage: "One-off commands (multiple use of flag allowed)", Required: false},
+								},
+								Action: func(c *cli.Context) error {
+									tpls := generators.New(embededTemplates)
+									gen := generators.GitHub{
+										CITagTrigger: c.Bool("tag-release"),
+										CIBranch:     "main",
+										CIWorkingDir: c.String("workdir"),
+										Stage:        c.String("stage"),
+										Domain:       c.String("domain"),
+										Subdomain:    c.String("subdomain"),
+										Region:       c.String("region"),
+										ECSCluster:   c.String("ecs-cluster"),
+										ECSService:   c.String("ecs-service"),
+										ECSOneOffs:   c.StringSlice("one-off"),
+									}
+									if err := gen.RenderBackend(tpls); err != nil {
+										return err
+									}
+									return nil
+								},
+							},
+							{
 								Name:  "frontend",
 								Usage: "Generate GitHub actions for CDN",
 								Flags: []cli.Flag{
@@ -65,33 +100,25 @@ func main() {
 									&cli.StringFlag{Name: "domain", Usage: "Application domain", Required: true},
 									&cli.StringFlag{Name: "region", Usage: "AWS Region for S3", Required: true},
 									&cli.StringFlag{Name: "app_id", Usage: "App ID specified in Terraform", Required: true},
+									&cli.StringFlag{Name: "stage", Usage: "Application environment", Required: true},
+									/// optional
+									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, DefaultText: "false"},
 								},
 								Action: func(c *cli.Context) error {
 									tpls := generators.New(embededTemplates)
 									gen := generators.GitHub{
-										CITagTrigger: false,
+										CITagTrigger: c.Bool("tag-release"),
 										CIBranch:     "main",
 										CIWorkingDir: c.String("workdir"),
-										Stage:        "staging",
-										Domain:       fmt.Sprint("staging.", c.String("domain")),
-										Region:       c.String("region"),
-										AppID:        c.String("app_id"),
-									}
-									if err := gen.Render(tpls); err != nil {
-										return err
-									}
-
-									gen = generators.GitHub{
-										CITagTrigger: true,
-										CIWorkingDir: c.String("workdir"),
-										Stage:        "production",
+										Stage:        c.String("stage"),
 										Domain:       c.String("domain"),
 										Region:       c.String("region"),
 										AppID:        c.String("app_id"),
 									}
-									if err := gen.Render(tpls); err != nil {
+									if err := gen.RenderFrontend(tpls); err != nil {
 										return err
 									}
+
 									return nil
 								},
 							},
