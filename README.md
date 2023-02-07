@@ -27,9 +27,51 @@ Generators are used to pre-generate templates that you can furhter adjust.
 
 #### GitHub workflows
 
-Generate staging and production workflows:
+Generate staging frontend workflow:
 ```
-selleo gen github frontend --workdir packages/client --domain selleo.com --region eu-central-1 --app_id website
+selleo gen github frontend      \
+  --workdir .                   \
+  --domain  staging.example.com \
+  --region  eu-west-1           \
+  --app_id  office              \
+  --stage   staging             
+```
+
+Generate production frontend workflow from subfolder and trigger build only on git tag push:
+```
+selleo gen github frontend     \
+  --workdir packages/office    \
+  --domain  example.com        \
+  --region  eu-west-1          \
+  --app_id  office             \
+  --stage   production         \
+  --tag-release
+```
+
+Generate staging backend workflow with no extra task running at the end:
+```
+selleo gen github backend           \
+  --workdir     .                   \
+  --domain      beta.example.com    \
+  --subdomain   api                 \
+  --region      eu-west-1           \
+  --ecs-cluster rails-1234          \
+  --ecs-service api                 \
+  --stage       staging             
+```
+
+Generate production backend workflow with extra task run at the end:
+```
+selleo gen github backend           \
+  --workdir     .                   \
+  --domain      example.com         \
+  --subdomain   api                 \
+  --region      eu-west-1           \
+  --ecs-cluster rails-1234          \
+  --ecs-service api                 \
+  --stage       production          \
+  --one-off     migrate             \
+  --tag-release
 ```
 
 ## About Selleo
