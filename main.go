@@ -35,6 +35,55 @@ func main() {
 				Usage: "Generate files from templates",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "terraform",
+						Usage: "Terraform related generators",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "app",
+								Usage: "Generate single app envrionemnt",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "tf-cloud-org", Usage: "Terraform Cloud organization", Required: true},
+									&cli.StringFlag{Name: "tf-cloud-workspace", Usage: "Terraform Cloud workspace", Required: true},
+									&cli.StringFlag{Name: "region", Usage: "AWS Region for resources", Required: true},
+									&cli.StringFlag{Name: "stage", Usage: "App stage", Required: true},
+									&cli.StringFlag{Name: "namespace", Usage: "App namespace", Required: true},
+									&cli.StringFlag{Name: "name", Usage: "App ID", Required: true},
+									&cli.StringFlag{Name: "domain", Usage: "Domain", Required: true},
+									&cli.StringFlag{Name: "subdomain", Usage: "Subdomain", Required: true},
+								},
+								Action: func(c *cli.Context) error {
+									gen := generators.Terraform{
+										TerraformCloudOrganization: c.String("tf-cloud-org"),
+										TerraformCloudWorkspace:    c.String("tf-cloud-workspace"),
+										Region:                     c.String("region"),
+										Namespace:                  c.String("namespace"),
+										Stage:                      c.String("stage"),
+										Name:                       c.String("name"),
+										Subdomain:                  c.String("subdomain"),
+										Domain:                     c.String("domain"),
+										IAMCI:                      fmt.Sprintf("ci-%s-%s", c.String("namespace"), c.String("stage")),
+										IAMApp:                     fmt.Sprintf("%s-%s-%s", c.String("namespace"), c.String("stage"), c.String("name")),
+										ECSInstanceType:            "t3.medium",
+										ECSMinSize:                 1,
+										ECSServiceMinMemory:        256,
+										ECSServiceMaxMemory:        1024,
+										ECSServiceCpu:              1024,
+										ECSServicePort:             3000,
+										ECSOneOffs:                 []string{},
+										LBName:                     fmt.Sprintf("%s-%s-%s", c.String("namespace"), c.String("stage"), c.String("name")),
+										DBName:                     c.String("name"),
+										DBIdentifier:               c.String("name"),
+										DBUser:                     "app",
+										DBMultiAZ:                  false,
+										DBApplyImmediately:         false,
+										BucketName:                 fmt.Sprintf("%s-%s-%s-storage", c.String("namespace"), c.String("stage"), c.String("name")),
+									}
+									return gen.Render(generators.New(embededTemplates))
+								},
+							},
+						},
+					},
+					{
 						Name:  "docker",
 						Usage: "Docker related generators",
 						Subcommands: []*cli.Command{
