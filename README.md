@@ -25,6 +25,21 @@ selleo aws dev --region eu-central-1 --path /office/dev/api npm run start
 
 Generators are used to pre-generate templates that you can furhter adjust.
 
+#### Terraform
+
+Generate app environment:
+```
+selleo gen terraform app \
+  --tf-cloud-org        selleo             \
+  --tf-cloud-workspace  ict-til-production \
+  --region              eu-west-1          \
+  --stage               production         \
+  --namespace           til                \
+  --name                api                \
+  --domain              til.selleo.com     \
+  --subdomain           api
+```
+
 #### GitHub workflows
 
 Generate staging frontend workflow:

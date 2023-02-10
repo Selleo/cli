@@ -16,7 +16,7 @@ module "lb" {
 
 
 module "lb_https" {
-  source  = "Selleo/lb/aws//modules//lb"
+  source  = "Selleo/lb/aws//modules//https-listener"
   version = "0.2.0"
 
   load_balancer_arn = module.lb.id
