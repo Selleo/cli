@@ -4,31 +4,25 @@ import (
 	"embed"
 	"fmt"
 	"io"
-	"io/fs"
 	"path/filepath"
 	"text/template"
+
+	"github.com/Selleo/cli/efs"
 )
 
 type TemplateRenderer struct {
 	tpls map[string]*template.Template
 }
 
-func New(efs embed.FS) *TemplateRenderer {
+func New(f embed.FS) *TemplateRenderer {
 	tpls := map[string]*template.Template{}
 
-	files := []string{}
-	err := fs.WalkDir(efs, ".", func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
-			return nil
-		}
-		files = append(files, path)
-		return nil
-	})
+	files, err := efs.Files(f)
 	if err != nil {
 		panic(fmt.Errorf("Failed to init templates: %v", err))
 	}
 	for _, file := range files {
-		t, err := template.New(filepath.Base(file)).Delims("{{{", "}}}").ParseFS(efs, file)
+		t, err := template.New(filepath.Base(file)).Delims("{{{", "}}}").ParseFS(f, file)
 		if err != nil {
 			panic(err)
 		}

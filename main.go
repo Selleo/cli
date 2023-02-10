@@ -10,6 +10,7 @@ import (
 	"github.com/Selleo/cli/generators"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
+	"github.com/Selleo/cli/web"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
 )
@@ -17,6 +18,8 @@ import (
 var (
 	//go:embed templates
 	embededTemplates embed.FS
+	//go:embed packages/secrets-ui/dist
+	embededUI embed.FS
 )
 
 func main() {
@@ -28,6 +31,13 @@ func main() {
 				Action: func(c *cli.Context) error {
 					fmt.Fprintf(c.App.Writer, "%s\n", selleo.Version)
 					return nil
+				},
+			},
+			{
+				Name: "ui",
+				Usage: "Start UI",
+				Action: func(c *cli.Context) error {
+					return web.UI(c.Context, embededUI)
 				},
 			},
 			{

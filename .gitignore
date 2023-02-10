@@ -15,3 +15,6 @@
 # vendor/
 .vscode
 test_deploy.sh
+/tmp/
+/packages/secrets-ui/dist/
+node_modules/
