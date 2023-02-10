@@ -63,6 +63,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ECS Deployment
+        run: selleo aws ecs deploy --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --docker-image $DOCKER_IMAGE {{{ range .ECSOneOffs }}}--one-off {{{ . }}} {{{end}}}
         env:
           AWS_REGION: {{{ .Region }}}
           ECS_CLUSTER: {{{ .ECSCluster }}}
@@ -73,17 +74,17 @@ jobs:
           {{{if .CITagTrigger -}}}
           DOCKER_IMAGE: ${{ secrets.AWS_ECR_URL }}:${{ env.IMAGE_TAG }}
           {{{ end -}}}
-        run: selleo aws ecs deploy --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --docker-image $DOCKER_IMAGE {{{ range .ECSOneOffs }}}--one-off {{{ . }}} {{{end}}}
 
 {{{ $_region := .Region -}}}
 {{{ $_ecs_cluster := .ECSCluster -}}}
 {{{ $_ecs_service := .ECSService -}}}
+
       {{{ range .ECSOneOffs }}}
       - name: ECS Run {{{.}}}
+        run: selleo aws ecs run --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --one-off {{{.}}}
         env:
           AWS_REGION: {{{ $_region }}}
           ECS_CLUSTER: {{{ $_ecs_cluster }}}
           ECS_SERVICE: {{{ $_ecs_service }}}
-        run: selleo aws ecs run --region $AWS_REGION --cluster $ECS_CLUSTER --service $ECS_SERVICE --one-off {{{.}}}
 
-      {{{end -}}}
+      {{{ end -}}}
