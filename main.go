@@ -10,6 +10,7 @@ import (
 	"github.com/Selleo/cli/generators"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
+	"github.com/Selleo/cli/tui"
 	"github.com/Selleo/cli/web"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
@@ -34,7 +35,7 @@ func main() {
 				},
 			},
 			{
-				Name: "ui",
+				Name:  "ui",
 				Usage: "Start UI",
 				Action: func(c *cli.Context) error {
 					return web.UI(c.Context, embededUI)
@@ -48,6 +49,13 @@ func main() {
 						Name:  "terraform",
 						Usage: "Terraform related generators",
 						Subcommands: []*cli.Command{
+							{
+								Name:  "wizard",
+								Usage: "Wizard for generating app",
+								Action: func(c *cli.Context) error {
+									return tui.Terraform{}.Run(c.Context)
+								},
+							},
 							{
 								Name:  "app",
 								Usage: "Generate single app envrionemnt",
