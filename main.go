@@ -11,7 +11,6 @@ import (
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
 	"github.com/Selleo/cli/tui"
-	"github.com/Selleo/cli/web"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
 )
@@ -38,7 +37,10 @@ func main() {
 				Name:  "ui",
 				Usage: "Start UI",
 				Action: func(c *cli.Context) error {
-					return web.UI(c.Context, embededUI)
+					return tui.Secrets{Data: map[string]string{
+						"AWS_ACCESS_KEY_ID":     "secret",
+						"AWS_SECRET_ACCESS_KEY": "secret",
+					}}.Run(c.Context)
 				},
 			},
 			{
