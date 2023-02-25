@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -25,16 +26,28 @@ func (s Secrets) Run(ctx context.Context) error {
 	}
 
 	const defaultWidth = 20
+	const listHeight = 20
 
 	l := list.New(items, awsSecretItemDelegate{}, defaultWidth, listHeight)
-	l.Title = "Choose secret to edit or add new one"
+	l.SetFilteringEnabled(true)
+	l.Title = "Choose secret to edit or add new one:"
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
+	l.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			// 	key.NewBinding(
+			// 		key.WithKeys("a"),
+			// 		key.WithHelp("a", "add secret"),
+			// 	),
+		}
+	}
 
-	m := modelSecret{list: l, route: "list"}
+	m := modelSecret{
+		list:    l,
+		secrets: s,
+	}
 
 	_, err := tea.NewProgram(m).Run()
 	return err
@@ -66,25 +79,30 @@ func (d awsSecretItemDelegate) Render(w io.Writer, m list.Model, index int, list
 }
 
 type modelSecret struct {
-	route  string
-	list   list.Model
-	choice string
+	list    list.Model
+	secrets Secrets
 }
 
 func (m modelSecret) Init() tea.Cmd {
-	return nil
+	return tea.EnterAltScreen
 }
 
 func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.list.SetWidth(msg.Width)
+		h, v := appStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-h, msg.Height-v)
 		return m, nil
 
 	case tea.KeyMsg:
+		// Don't match any of the keys below if we're actively filtering.
+		if m.list.FilterState() == list.Filtering {
+			break
+		}
+
 		switch keypress := msg.String(); keypress {
-		case "a":
-			return m, nil
+		// case "a":
+		// 	return m, nil
 
 		case "ctrl+c":
 			return m, tea.Quit
@@ -94,9 +112,10 @@ func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !ok {
 				panic("must be awsSecretItem")
 			}
-
-			m.choice = string(i.Key)
-			return m, tea.Quit
+			secretKey := string(i.Key)
+			secretValue, _ := m.secrets.Data[secretKey]
+			edit := newEditSecretModel(secretKey, secretValue)
+			return edit, edit.Init()
 		}
 	}
 
@@ -106,21 +125,7 @@ func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m modelSecret) View() string {
-	switch m.route {
-	case "list":
-		if m.choice != "" {
-			return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-		}
-		return "\n" + m.list.View()
-
-	case "edit":
-		return "edit"
-
-	case "add":
-		return "add"
-	}
-
-	return ""
+	return m.list.View()
 }
 
 // func (m modelSecret) EditSecretsView() string {

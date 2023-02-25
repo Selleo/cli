@@ -52,13 +52,6 @@ func main() {
 						Usage: "Terraform related generators",
 						Subcommands: []*cli.Command{
 							{
-								Name:  "wizard",
-								Usage: "Wizard for generating app",
-								Action: func(c *cli.Context) error {
-									return tui.Terraform{}.Run(c.Context)
-								},
-							},
-							{
 								Name:  "app",
 								Usage: "Generate single app envrionemnt",
 								Flags: []cli.Flag{
