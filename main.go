@@ -36,11 +36,16 @@ func main() {
 			{
 				Name:  "ui",
 				Usage: "Start UI",
+
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+					&cli.StringFlag{Name: "path", Usage: "SSM Path", Required: true},
+				},
 				Action: func(c *cli.Context) error {
-					return tui.Secrets{Data: map[string]string{
-						"AWS_ACCESS_KEY_ID":     "secret",
-						"AWS_SECRET_ACCESS_KEY": "secret",
-					}}.Run(c.Context)
+					region := c.String("region")
+					path := c.String("path")
+					prog := tui.Program{}
+					return prog.Run(c.Context, region, path)
 				},
 			},
 			{

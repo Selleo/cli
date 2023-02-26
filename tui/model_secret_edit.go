@@ -9,50 +9,48 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type editSecretModel struct {
+type modelSecretEdit struct {
+	title       string
 	secretInput textarea.Model
 	keyInput    textinput.Model
 	focused     int
-	key         string
-	value       string
+	oldKey      string
+	oldValue    string
 	inputsCount int
 }
 
-func newEditSecretModel(key string, value string) editSecretModel {
-	ta := textarea.New()
-	ta.Placeholder = "Paste your secret here..."
-	ta.CharLimit = 4096
-	// ta.SetWidth(100)
-	ta.Prompt = ""
-	ta.SetHeight(20)
-
+func newEditSecretModel(title string, key string, value string) modelSecretEdit {
 	keyInput := textinput.New()
 	keyInput.Placeholder = "Paste your key here"
 	keyInput.Focus()
 	keyInput.Width = 100
 	keyInput.PromptStyle = lipgloss.NewStyle().MarginLeft(2)
 	keyInput.Prompt = ""
-	// keyInput.Validate = ccnValidator
+	keyInput.SetValue(key)
 
-	return editSecretModel{
+	secretInput := textarea.New()
+	secretInput.Placeholder = "Paste your secret here..."
+	secretInput.CharLimit = 4096
+	secretInput.Prompt = ""
+	secretInput.SetHeight(20)
+	secretInput.SetValue(value)
+
+	return modelSecretEdit{
+		title:       title,
 		inputsCount: 2,
-		secretInput: ta,
+		secretInput: secretInput,
 		keyInput:    keyInput,
 		focused:     0,
-		key:         key,
-		value:       value,
+		oldKey:      key,
+		oldValue:    value,
 	}
 }
 
-func Background(color lipgloss.Color) {
-	panic("unimplemented")
-}
-
-func (m editSecretModel) Init() tea.Cmd {
+func (m modelSecretEdit) Init() tea.Cmd {
 	return textarea.Blink
 }
 
-func (m editSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m modelSecretEdit) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -66,9 +64,15 @@ func (m editSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			// if m.focused == 0 {
-			// 	m.nextInput()
-			// }
+			job := &SaveSecretJob{
+				OldKey:    m.oldKey,
+				OldSecret: m.oldValue,
+				NewKey:    m.keyInput.Value(),
+				NewSecret: m.secretInput.Value(),
+			}
+			model := newJobModel(fmt.Sprintf("Saving secret %s", job.NewKey), job)
+			return model, model.Init()
+
 		case tea.KeyEsc:
 			if m.secretInput.Focused() {
 				m.secretInput.Blur()
@@ -108,9 +112,10 @@ func (m editSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m editSecretModel) View() string {
+func (m modelSecretEdit) View() string {
 	return fmt.Sprintf(
-		"Edit secret:\n\n%s\n%s\n\n%s\n%s\n",
+		"  %s:\n\n%s\n%s\n\n%s\n%s\n",
+		m.title,
 		labelStyle.Width(30).Render("Key"),
 		m.keyInput.View(),
 		labelStyle.Width(30).Render("Secret"),
@@ -118,11 +123,11 @@ func (m editSecretModel) View() string {
 	)
 }
 
-func (m *editSecretModel) nextInput() {
+func (m *modelSecretEdit) nextInput() {
 	m.focused = (m.focused + 1) % m.inputsCount
 }
 
-func (m *editSecretModel) prevInput() {
+func (m *modelSecretEdit) prevInput() {
 	m.focused--
 	if m.focused < 0 {
 		m.focused = m.inputsCount - 1

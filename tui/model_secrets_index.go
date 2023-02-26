@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -10,18 +9,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type Secrets struct {
-	Data map[string]string
-}
-
 type awsSecretItem struct {
 	Key   string
 	Value string
 }
 
-func (s Secrets) Run(ctx context.Context) error {
+func newIndexSecretsModel(data map[string]string) modelSecretsIndex {
 	items := []list.Item{}
-	for k, v := range s.Data {
+	for k, v := range data {
 		items = append(items, awsSecretItem{k, v})
 	}
 
@@ -37,20 +32,18 @@ func (s Secrets) Run(ctx context.Context) error {
 	l.Styles.HelpStyle = helpStyle
 	l.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
-			// 	key.NewBinding(
-			// 		key.WithKeys("a"),
-			// 		key.WithHelp("a", "add secret"),
-			// 	),
+			// key.NewBinding(
+			// 	key.WithKeys("a"),
+			// 	key.WithHelp("a", "add secret"),
+			// ),
 		}
 	}
 
-	m := modelSecret{
+	m := modelSecretsIndex{
 		list:    l,
-		secrets: s,
+		secrets: data,
 	}
-
-	_, err := tea.NewProgram(m).Run()
-	return err
+	return m
 }
 
 func (i awsSecretItem) FilterValue() string { return i.Key }
@@ -78,16 +71,16 @@ func (d awsSecretItemDelegate) Render(w io.Writer, m list.Model, index int, list
 	fmt.Fprint(w, fn(str))
 }
 
-type modelSecret struct {
+type modelSecretsIndex struct {
 	list    list.Model
-	secrets Secrets
+	secrets map[string]string
 }
 
-func (m modelSecret) Init() tea.Cmd {
+func (m modelSecretsIndex) Init() tea.Cmd {
 	return tea.EnterAltScreen
 }
 
-func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m modelSecretsIndex) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
@@ -102,7 +95,8 @@ func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch keypress := msg.String(); keypress {
 		// case "a":
-		// 	return m, nil
+		// 	edit := newEditSecretModel("New secret", "", "")
+		// 	return edit, edit.Init()
 
 		case "ctrl+c":
 			return m, tea.Quit
@@ -113,8 +107,8 @@ func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				panic("must be awsSecretItem")
 			}
 			secretKey := string(i.Key)
-			secretValue, _ := m.secrets.Data[secretKey]
-			edit := newEditSecretModel(secretKey, secretValue)
+			secretValue := m.secrets[secretKey]
+			edit := newEditSecretModel("Edit secret", secretKey, secretValue)
 			return edit, edit.Init()
 		}
 	}
@@ -124,10 +118,6 @@ func (m modelSecret) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m modelSecret) View() string {
+func (m modelSecretsIndex) View() string {
 	return m.list.View()
 }
-
-// func (m modelSecret) EditSecretsView() string {
-// 	return ""
-// }
