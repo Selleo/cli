@@ -40,6 +40,7 @@ func newJobModel(text string, job Job) modelJob {
 
 func (m modelJob) Init() tea.Cmd {
 	return tea.Batch(
+		tea.EnterAltScreen,
 		m.spinner.Tick,
 		m.job.Run,
 	)
