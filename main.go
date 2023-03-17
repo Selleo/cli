@@ -5,12 +5,12 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/Selleo/cli/awscmd"
 	"github.com/Selleo/cli/generators"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
-	"github.com/Selleo/cli/web"
 	"github.com/urfave/cli/v2"
 	"github.com/wzshiming/ctc"
 )
@@ -18,8 +18,8 @@ import (
 var (
 	//go:embed templates
 	embededTemplates embed.FS
-	//go:embed packages/secrets-ui/dist
-	embededUI embed.FS
+	// ####go:embed packages/secrets-ui/dist
+	// embededUI embed.FS
 )
 
 func main() {
@@ -33,13 +33,13 @@ func main() {
 					return nil
 				},
 			},
-			{
-				Name: "ui",
-				Usage: "Start UI",
-				Action: func(c *cli.Context) error {
-					return web.UI(c.Context, embededUI)
-				},
-			},
+			// {
+			// 	Name:  "ui",
+			// 	Usage: "Start UI",
+			// 	Action: func(c *cli.Context) error {
+			// 		return web.UI(c.Context, embededUI)
+			// 	},
+			// },
 			{
 				Name:  "gen",
 				Usage: "Generate files from templates",
@@ -273,8 +273,16 @@ func main() {
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
 									&cli.StringFlag{Name: "docker-image", Usage: "Docker image to replace task definition with", Required: true},
 									&cli.StringSliceFlag{Name: "one-off", Usage: "One-off commands (multiple use of flag allowed)", Required: false},
+									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, DefaultText: "10m"},
 								},
 								Action: func(c *cli.Context) error {
+									timeout, err := time.ParseDuration(c.String("timeout"))
+									if err != nil {
+										return err
+									}
+									ctx, cancel := context.WithTimeout(c.Context, timeout)
+									defer cancel()
+
 									input := &awscmd.InputEcsDeploy{
 										Region:      c.String("region"),
 										Cluster:     c.String("cluster"),
@@ -282,7 +290,7 @@ func main() {
 										DockerImage: c.String("docker-image"),
 										OneOffs:     c.StringSlice("one-off"),
 									}
-									out, err := awscmd.EcsDeploy(context.TODO(), input, c.App.Writer)
+									out, err := awscmd.EcsDeploy(ctx, input, c.App.Writer)
 									if out != nil {
 										fmt.Fprintf(
 											c.App.Writer,
@@ -302,7 +310,7 @@ func main() {
 										Service:      c.String("service"),
 										DeploymentID: out.MonitoredDeploymentID,
 									}
-									_, err = awscmd.EcsDeployWait(context.TODO(), waitInput, c.App.Writer)
+									_, err = awscmd.EcsDeployWait(ctx, waitInput, c.App.Writer)
 									if err != nil {
 										return err
 									}
@@ -326,15 +334,23 @@ func main() {
 									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
 									&cli.StringFlag{Name: "one-off", Usage: "One-off command to run", Required: true},
+									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, DefaultText: "10m"},
 								},
 								Action: func(c *cli.Context) error {
+									timeout, err := time.ParseDuration(c.String("timeout"))
+									if err != nil {
+										return err
+									}
+									ctx, cancel := context.WithTimeout(c.Context, timeout)
+									defer cancel()
+
 									runTaskInput := &awscmd.InputEcsRunTask{
 										Region:        c.String("region"),
 										Cluster:       c.String("cluster"),
 										Service:       c.String("service"),
 										OneOffCommand: c.String("one-off"),
 									}
-									out, err := awscmd.EcsRunTask(context.TODO(), runTaskInput, c.App.Writer)
+									out, err := awscmd.EcsRunTask(ctx, runTaskInput, c.App.Writer)
 									if err != nil {
 										return err
 									}
@@ -350,7 +366,7 @@ func main() {
 										Cluster: c.String("cluster"),
 										ARN:     out.ARN,
 									}
-									_, err = awscmd.EcsTaskWait(context.TODO(), waitInput, c.App.Writer)
+									_, err = awscmd.EcsTaskWait(ctx, waitInput, c.App.Writer)
 									if err != nil {
 										return err
 									}

@@ -9,11 +9,10 @@ on:
     {{{if not .CITagTrigger -}}}
     branches:
       - {{{ .CIBranch }}}
-    {{{end -}}}
     paths:
       - {{{ .CIWorkingDir }}}/**
       - .github/workflows/deploy-{{{ .Stage }}}-frontend.yml
-
+    {{{end }}}
 jobs:
   build:
     runs-on: ubuntu-latest
