@@ -91,13 +91,6 @@ selleo gen github backend           \
   --tag-release
 ```
 
-## CLI Development (local)
-
-Run make to ensure `index.html` exists.
-```
-make
-```
-
 ## About Selleo
 
 ![selleo](https://raw.githubusercontent.com/Selleo/selleo-resources/master/public/github_footer.png)
