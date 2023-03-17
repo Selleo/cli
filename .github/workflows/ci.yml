@@ -14,18 +14,13 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
+
       -
         name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.18
-
-      -
-        name: Ensure index.html
-        run: touch packages/secrets-ui/dist/index.html
 
       -
         name: Run GoReleaser
