@@ -128,7 +128,7 @@ func main() {
 									&cli.StringFlag{Name: "ecs-service", Usage: "ECS service name", Required: true},
 									&cli.StringFlag{Name: "stage", Usage: "Application environment", Required: true},
 									/// optional
-									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, DefaultText: "false"},
+									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, Value: false},
 									&cli.StringSliceFlag{Name: "one-off", Usage: "One-off commands (multiple use of flag allowed)", Required: false},
 								},
 								Action: func(c *cli.Context) error {
@@ -161,7 +161,7 @@ func main() {
 									&cli.StringFlag{Name: "app_id", Usage: "App ID specified in Terraform", Required: true},
 									&cli.StringFlag{Name: "stage", Usage: "Application environment", Required: true},
 									/// optional
-									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, DefaultText: "false"},
+									&cli.BoolFlag{Name: "tag-release", Usage: "Trigger CI on tag release", Required: false, Value: false},
 								},
 								Action: func(c *cli.Context) error {
 									tpls := generators.New(embededTemplates)
@@ -272,10 +272,17 @@ func main() {
 									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
 									&cli.StringFlag{Name: "docker-image", Usage: "Docker image to replace task definition with", Required: true},
+									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, Value: "10m"},
 									&cli.StringSliceFlag{Name: "one-off", Usage: "One-off commands (multiple use of flag allowed)", Required: false},
-									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, DefaultText: "10m"},
 								},
 								Action: func(c *cli.Context) error {
+									fmt.Fprintf(
+										c.App.Writer,
+										"%sStarting deployment [timeout=%s]%s\n",
+										ctc.ForegroundYellow,
+										c.String("timeout"),
+										ctc.Reset,
+									)
 									timeout, err := time.ParseDuration(c.String("timeout"))
 									if err != nil {
 										return err
@@ -334,7 +341,7 @@ func main() {
 									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
 									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
 									&cli.StringFlag{Name: "one-off", Usage: "One-off command to run", Required: true},
-									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, DefaultText: "10m"},
+									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, Value: "10m"},
 								},
 								Action: func(c *cli.Context) error {
 									timeout, err := time.ParseDuration(c.String("timeout"))
