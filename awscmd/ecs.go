@@ -39,41 +39,26 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy, w io.Writer) (*OuputE
 		return nil, err
 	}
 
-	// 1. fetch running task
-	fmt.Fprintf(w, "Fetching service definition\n")
-	serviceOut, err := svc.DescribeServicesWithContext(ctx, &ecs.DescribeServicesInput{
-		Cluster:  aws.String(input.Cluster),
-		Services: []*string{aws.String(input.Service)},
-	})
 
-	if err != nil {
-		return nil, fmt.Errorf("Failed to fetch current running task: %w", err)
-	}
+	taskDef, err := ecsTaskDefinitionFromService(svc, ctx, input.Cluster, input.Service, w)
+	taskName := *taskDef.Family
 
-	if len(serviceOut.Services) == 0 {
-		return nil, fmt.Errorf("No service definition found")
-	}
-	if len(serviceOut.Services) != 1 {
-		// this should not happen because we defined only 1 service in input but stays for sanity check
-		return nil, fmt.Errorf("Ambigious match, found more than 1 service")
-	}
-
-	var taskDefinition *string
-	for _, s := range serviceOut.Services {
-		taskDefinition = s.TaskDefinition
-	}
-
-	fmt.Fprintf(w, "Registering new task [%s]\n", idOneOff(input.Service, ""))
+	fmt.Fprintf(w, "Registering new task [%s]\n", idOneOff(taskName, ""))
 	newTask, err := ecsRegisterTaskDefinition(svc, ctx, &inputRegisterTaskDefinition{
-		TaskDefinitionOrARN: *taskDefinition,
+		TaskDefinitionOrARN: *taskDef.TaskDefinitionArn,
 		DockerImage:         input.DockerImage,
 	}, w)
 	if err != nil {
 		return nil, err
 	}
 	for _, cmd := range input.OneOffs {
-		fmt.Fprintf(w, "Registering new one-off task [%s]\n", idOneOff(input.Service, cmd))
-		taskDef := fmt.Sprintf("arn:aws:ecs:%s:%s:task-definition/%s", input.Region, *caller.Account, idOneOff(input.Service, cmd))
+		fmt.Fprintf(w, "Registering new one-off task [%s]\n", idOneOff(taskName, cmd))
+		taskDef := fmt.Sprintf(
+			"arn:aws:ecs:%s:%s:task-definition/%s",
+			input.Region,
+			*caller.Account,
+			idOneOff(taskName, cmd),
+		)
 		_, err := ecsRegisterTaskDefinition(svc, ctx, &inputRegisterTaskDefinition{
 			TaskDefinitionOrARN: taskDef,
 			DockerImage:         input.DockerImage,
@@ -188,7 +173,8 @@ func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*Oupu
 	}
 	svc := ecs.New(sess)
 
-	taskName := idOneOff(input.Service, input.OneOffCommand)
+	taskDef, err := ecsTaskDefinitionFromService(svc, ctx, input.Cluster, input.Service, w)
+	taskName := idOneOff(*taskDef.Family, input.OneOffCommand)
 
 	out, err := svc.RunTask(&ecs.RunTaskInput{
 		Cluster:        aws.String(input.Cluster),
@@ -326,6 +312,43 @@ func ecsRegisterTaskDefinition(svc *ecs.ECS, ctx context.Context, input *inputRe
 	}, nil
 }
 
+func ecsTaskDefinitionFromService(svc *ecs.ECS, ctx context.Context, cluster string, service string, w io.Writer) (*ecs.TaskDefinition, error) {
+	// 1. fetch running task
+	fmt.Fprintf(w, "Fetching service definition\n")
+	serviceOut, err := svc.DescribeServicesWithContext(ctx, &ecs.DescribeServicesInput{
+		Cluster:  aws.String(cluster),
+		Services: []*string{aws.String(service)},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch current running task: %w", err)
+	}
+
+	if len(serviceOut.Services) == 0 {
+		return nil, fmt.Errorf("No service definition found")
+	}
+	if len(serviceOut.Services) != 1 {
+		// this should not happen because we defined only 1 service in input but stays for sanity check
+		return nil, fmt.Errorf("Ambigious match, found more than 1 service")
+	}
+
+	var taskDefinition *string
+	for _, s := range serviceOut.Services {
+		taskDefinition = s.TaskDefinition
+	}
+
+	// 2. fetch task definition family
+	fmt.Fprintf(w, "Fetching task definition\n")
+	task, err := svc.DescribeTaskDefinitionWithContext(ctx, &ecs.DescribeTaskDefinitionInput{
+		TaskDefinition: taskDefinition,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to describe task definition: %v", err)
+	}
+
+	return task.TaskDefinition, nil
+}
+
 type inputRegisterTaskDefinition struct {
 	TaskDefinitionOrARN string
 	DockerImage         string
@@ -336,10 +359,10 @@ type outputRegisterTaskDefinition struct {
 }
 
 // convention used in terraform modules
-func idOneOff(service string, command string) string {
+func idOneOff(prefix string, command string) string {
 	if command == "" {
-		return service
+		return prefix
 	} else {
-		return fmt.Sprint(service, "-", command)
+		return fmt.Sprint(prefix, "-", command)
 	}
 }
