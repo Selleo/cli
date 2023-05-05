@@ -39,7 +39,6 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy, w io.Writer) (*OuputE
 		return nil, err
 	}
 
-
 	taskDef, err := ecsTaskDefinitionFromService(svc, ctx, input.Cluster, input.Service, w)
 	taskName := *taskDef.Family
 
@@ -166,7 +165,7 @@ func EcsDeployWait(ctx context.Context, input *InputEcsDeployWait, w io.Writer) 
 	}
 }
 
-func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*OuputEcsRunTask, error) {
+func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*OutputEcsRunTask, error) {
 	sess, err := NewSession(input.Region)
 	if err != nil {
 		return nil, err
@@ -182,14 +181,18 @@ func EcsRunTask(ctx context.Context, input *InputEcsRunTask, w io.Writer) (*Oupu
 		Count:          aws.Int64(1),
 	})
 	if err != nil {
-		return &OuputEcsRunTask{}, fmt.Errorf("Can't runTask: %v", err)
+		return &OutputEcsRunTask{}, fmt.Errorf("Can't runTask: %v", err)
+	}
+	err = failuresToError(out.Failures)
+	if err != nil {
+		return &OutputEcsRunTask{}, fmt.Errorf("Can't runTask: %v", err)
 	}
 
 	arn := *out.Tasks[0].TaskArn
 	splits := strings.Split(arn, "/")
 	id := splits[len(splits)-1]
 
-	return &OuputEcsRunTask{
+	return &OutputEcsRunTask{
 		ARN: arn,
 		ID:  id,
 	}, nil
@@ -202,7 +205,7 @@ type InputEcsRunTask struct {
 	OneOffCommand string
 }
 
-type OuputEcsRunTask struct {
+type OutputEcsRunTask struct {
 	ARN string
 	ID  string
 }
@@ -365,4 +368,21 @@ func idOneOff(prefix string, command string) string {
 	} else {
 		return fmt.Sprint(prefix, "-", command)
 	}
+}
+
+func failuresToError(failures []*ecs.Failure) error {
+	if len(failures) > 0 {
+		failure := failures[0]
+		detail := ""
+		if failure.Detail != nil {
+			detail = fmt.Sprint(" ", *failure.Detail, " ")
+		}
+		return fmt.Errorf(
+			"%s%s (%s)",
+			*failure.Reason,
+			detail,
+			*failure.Arn,
+		)
+	}
+	return nil
 }
