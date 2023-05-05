@@ -210,6 +210,55 @@ type OutputEcsRunTask struct {
 	ID  string
 }
 
+func EcsRestartTask(ctx context.Context, input *InputEcsRestartTask, w io.Writer) (*OutputEcsRestartTask, error) {
+	sess, err := NewSession(input.Region)
+	if err != nil {
+		return nil, err
+	}
+	svc := ecs.New(sess)
+
+	// 1. update ecs service with new task arn
+	fmt.Fprintf(w, "Updating service\n")
+	updateOut, err := svc.UpdateServiceWithContext(ctx, &ecs.UpdateServiceInput{
+		Cluster:            aws.String(input.Cluster),
+		Service:            aws.String(input.Service),
+		ForceNewDeployment: aws.Bool(true),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to restart service: %w", err)
+	}
+	var monitoredDeployment *ecs.Deployment = nil
+	for _, deployment := range updateOut.Service.Deployments {
+		if *deployment.Status == "PRIMARY" {
+			monitoredDeployment = deployment
+			break
+		}
+	}
+
+	if monitoredDeployment == nil {
+		return &OutputEcsRestartTask{
+			Service: *updateOut.Service.ServiceName,
+		}, fmt.Errorf("Service %s deployed but couldn't fetch primary deployment status", *updateOut.Service.ServiceName)
+	}
+
+	return &OutputEcsRestartTask{
+		Service:               *updateOut.Service.ServiceName,
+		MonitoredDeploymentID: *monitoredDeployment.Id,
+	}, nil
+}
+
+type InputEcsRestartTask struct {
+	Region        string
+	Cluster       string
+	Service       string
+	OneOffCommand string
+}
+
+type OutputEcsRestartTask struct {
+	Service               string
+	MonitoredDeploymentID string
+}
+
 func EcsTaskWait(ctx context.Context, input *InputEcsTaskWait, w io.Writer) (*OuputEcsTaskWait, error) {
 	sess, err := NewSession(input.Region)
 	if err != nil {

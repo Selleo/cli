@@ -389,6 +389,54 @@ func main() {
 									return nil
 								},
 							},
+							{
+								Name:  "restart",
+								Usage: "Restarts service",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+									&cli.StringFlag{Name: "cluster", Usage: "ECS cluster ID", Required: true},
+									&cli.StringFlag{Name: "service", Usage: "ECS service ID", Required: true},
+									&cli.StringFlag{Name: "timeout", Usage: `Timeout (time units are "ns", "us" (or "µs"), "ms", "s", "m", "h")`, Required: false, Value: "10m"},
+								},
+								Action: func(c *cli.Context) error {
+									timeout, err := time.ParseDuration(c.String("timeout"))
+									if err != nil {
+										return err
+									}
+									ctx, cancel := context.WithTimeout(c.Context, timeout)
+									defer cancel()
+
+									restartTaskInput := &awscmd.InputEcsRestartTask{
+										Region:  c.String("region"),
+										Cluster: c.String("cluster"),
+										Service: c.String("service"),
+									}
+									out, err := awscmd.EcsRestartTask(ctx, restartTaskInput, c.App.Writer)
+									if err != nil {
+										return err
+									}
+									waitInput := &awscmd.InputEcsDeployWait{
+										Region:       c.String("region"),
+										Cluster:      c.String("cluster"),
+										Service:      c.String("service"),
+										DeploymentID: out.MonitoredDeploymentID,
+									}
+									_, err = awscmd.EcsDeployWait(ctx, waitInput, c.App.Writer)
+									if err != nil {
+										return err
+									}
+
+									fmt.Fprintf(
+										c.App.Writer,
+										"%sDeployment for service `%s` reached stable state%s\n",
+										ctc.ForegroundGreen,
+										out.Service,
+										ctc.Reset,
+									)
+
+									return nil
+								},
+							},
 						},
 					},
 				},
