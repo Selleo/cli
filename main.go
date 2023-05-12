@@ -23,6 +23,12 @@ var (
 )
 
 func main() {
+	if available, current, newest := selleo.IsNewVersionAvailable(); available {
+		fmt.Printf("New version is available %s%s%s -> %s%s%s\n\n",
+			ctc.ForegroundYellow, current, ctc.Reset,
+			ctc.ForegroundYellow, newest, ctc.Reset)
+	}
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
