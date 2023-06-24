@@ -10,7 +10,7 @@ import (
 )
 
 type InputSSMGetParameters struct {
-	Path   string
+	Paths  []string
 	Region string
 }
 
@@ -31,20 +31,23 @@ func SSMGetParameters(ctx context.Context, input *InputSSMGetParameters) (*Outpu
 		return nil, err
 	}
 	svc := ssm.New(sess)
-	err = svc.GetParametersByPathPagesWithContext(ctx, &ssm.GetParametersByPathInput{
-		Path:           aws.String(fmt.Sprint(input.Path, "/")),
-		WithDecryption: aws.Bool(true),
-	}, func(o *ssm.GetParametersByPathOutput, lastPage bool) bool {
-		for _, v := range o.Parameters {
-			splits := strings.Split(*v.Name, "/") // split "a/b/c/ENV" by "/" to extract ENV
-			env := splits[len(splits)-1]
-			value := *v.Value
-			parameters[env] = string(value)
+
+	for _, path := range input.Paths {
+		err = svc.GetParametersByPathPagesWithContext(ctx, &ssm.GetParametersByPathInput{
+			Path:           aws.String(fmt.Sprint(path, "/")),
+			WithDecryption: aws.Bool(true),
+		}, func(o *ssm.GetParametersByPathOutput, lastPage bool) bool {
+			for _, v := range o.Parameters {
+				splits := strings.Split(*v.Name, "/") // split "a/b/c/ENV" by "/" to extract ENV
+				env := splits[len(splits)-1]
+				value := *v.Value
+				parameters[env] = string(value)
+			}
+			return !lastPage
+		})
+		if err != nil {
+			return nil, err
 		}
-		return !lastPage
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	return out, nil

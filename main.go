@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Selleo/cli/awscmd"
@@ -194,18 +195,23 @@ func main() {
 						Usage: "Start a service with SSM secrets",
 						Flags: []cli.Flag{
 							&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
-							&cli.StringFlag{Name: "path", Usage: "SSM Path", Required: true},
+							&cli.StringSliceFlag{Name: "path", Usage: "Store Parameters Path (multiple use of flag allowed)", Required: true},
 						},
 						Action: func(c *cli.Context) error {
 							input := &awscmd.InputSSMGetParameters{
 								Region: c.String("region"),
-								Path:   c.String("path"),
+								Paths:  c.StringSlice("path"),
+							}
+							paths := strings.Builder{}
+							for _, p := range input.Paths {
+								paths.WriteString(p)
+								paths.WriteString("/*\n")
 							}
 							fmt.Fprintf(
 								c.App.Writer,
 								"%sFetching secrets %s%s\n",
 								ctc.ForegroundYellow,
-								fmt.Sprint(input.Path, "/*"),
+								paths.String(),
 								ctc.Reset,
 							)
 							out, err := awscmd.SSMGetParameters(context.TODO(), input)
@@ -220,12 +226,12 @@ func main() {
 						Usage: "Export SSM",
 						Flags: []cli.Flag{
 							&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
-							&cli.StringFlag{Name: "path", Usage: "SSM Path", Required: true},
+							&cli.StringSliceFlag{Name: "path", Usage: "Store Parameters Path (multiple use of flag allowed)", Required: true},
 						},
 						Action: func(c *cli.Context) error {
 							input := &awscmd.InputSSMGetParameters{
 								Region: c.String("region"),
-								Path:   c.String("path"),
+								Paths:  c.StringSlice("path"),
 							}
 							out, err := awscmd.SSMGetParameters(context.TODO(), input)
 							if err != nil {
