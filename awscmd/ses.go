@@ -13,12 +13,12 @@ const (
 	sesPasswordVersion  = 0x04
 )
 
-func SESPasswordFromAccessKey(region string, secret string) string {
-	signature := cryptographic.HMACWithSHA256([]byte("AWS4"+secret), []byte(sesPasswordDate))
+func SESPasswordFromAccessKey(region string, secretKey string) string {
+	signature := cryptographic.HMACWithSHA256([]byte("AWS4"+secretKey), []byte(sesPasswordDate))
 	signature = cryptographic.HMACWithSHA256(signature, []byte(region))
 	signature = cryptographic.HMACWithSHA256(signature, []byte(sesPasswordService))
 	signature = cryptographic.HMACWithSHA256(signature, []byte(sesPasswordTerminal))
-	signature = cryptographic.HMACWithSHA256(signature, []byte(sesPasswordTerminal))
+	signature = cryptographic.HMACWithSHA256(signature, []byte(sesPasswordMessage))
 	signatureAndVersion := []byte{sesPasswordVersion}
 	signatureAndVersion = append(signatureAndVersion, signature...)
 	smtpPassword := fmtx.Base64(signatureAndVersion)
