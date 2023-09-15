@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/Selleo/cli/awscmd"
+	"github.com/Selleo/cli/cryptographic"
+	"github.com/Selleo/cli/fmtx"
 	"github.com/Selleo/cli/generators"
+	"github.com/Selleo/cli/random"
 	"github.com/Selleo/cli/selleo"
 	"github.com/Selleo/cli/shellcmd"
 	"github.com/urfave/cli/v2"
@@ -34,13 +37,83 @@ func main() {
 					return nil
 				},
 			},
-			// {
-			// 	Name:  "ui",
-			// 	Usage: "Start UI",
-			// 	Action: func(c *cli.Context) error {
-			// 		return web.UI(c.Context, embededUI)
-			// 	},
-			// },
+			{
+				Name:  "rand",
+				Usage: "Ranndom generators",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "uuid4",
+						Usage: "Generates UUID v4",
+						Action: func(c *cli.Context) error {
+							fmt.Fprintf(
+								c.App.Writer,
+								"%s\n",
+								random.UUID4(),
+							)
+							return nil
+						},
+					},
+					{
+						Name:  "bytes",
+						Usage: "Random bytes",
+						Flags: []cli.Flag{
+							&cli.IntFlag{Name: "size", Usage: "Size of sequence", Required: false, Value: 64},
+							&cli.StringFlag{Name: "format", Usage: "Output type (hex|base64|base32|raw)", Required: false, Value: "hex"},
+						},
+						Action: func(c *cli.Context) error {
+							out, err := random.Bytes(c.Int("size"), c.String("format"))
+							if err != nil {
+								return err
+							}
+							fmt.Fprintf(
+								c.App.Writer,
+								"%s\n",
+								out,
+							)
+							return nil
+						},
+					},
+				},
+			},
+			{
+				Name:  "crypto",
+				Usage: "Cryptographic functions",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "hmac",
+						Usage: "Keyed-Hash Message Authentication Code",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "sha256",
+								Usage: "HMAC SHA256 signature",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "key", Usage: "Secret key to sign a message", Required: true},
+									&cli.StringFlag{Name: "message", Usage: "Message", Required: true},
+									&cli.StringFlag{Name: "format", Usage: "Output type (hex|base64|base32|raw)", Required: false, Value: "hex"},
+								},
+								Action: func(c *cli.Context) error {
+									out, err := fmtx.OutputFormat(
+										cryptographic.HMACWithSHA256(
+											[]byte(c.String("key")),
+											[]byte(c.String("message")),
+										),
+										c.String("format"),
+									)
+									if err != nil {
+										return err
+									}
+									fmt.Fprintf(
+										c.App.Writer,
+										"%s\n",
+										out,
+									)
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
 			{
 				Name:  "gen",
 				Usage: "Generate files from templates",
@@ -190,6 +263,25 @@ func main() {
 				Name:  "aws",
 				Usage: "AWS cloud commands",
 				Subcommands: []*cli.Command{
+					{
+						Name:  "ses",
+						Usage: "Simple Email Service",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "password",
+								Usage: "Generate SMTP password",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+									&cli.StringFlag{Name: "secret", Usage: "Secret Access Key", Required: true},
+								},
+								Action: func(c *cli.Context) error {
+									password := awscmd.SESPasswordFromAccessKey(c.String("region"), c.String("secret"))
+									fmtx.FGreenln(c.App.Writer, password)
+									return nil
+								},
+							},
+						},
+					},
 					{
 						Name:  "dev",
 						Usage: "Start a service with SSM secrets",
