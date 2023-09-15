@@ -38,6 +38,22 @@ func main() {
 				},
 			},
 			{
+				Name:  "adr",
+				Usage: "Architecture Decision Records",
+				Subcommands: []*cli.Command{
+					{
+						Name: "new",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "title", Usage: "Title of the ADR", Required: true},
+						},
+						Action: func(c *cli.Context) error {
+							gen := generators.ADR{Title: c.String("title")}
+							return gen.Render(generators.New(embededTemplates))
+						},
+					},
+				},
+			},
+			{
 				Name:  "rand",
 				Usage: "Ranndom generators",
 				Subcommands: []*cli.Command{
