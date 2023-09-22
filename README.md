@@ -1,6 +1,27 @@
 # cli
 
-Install via homebrew (first time):
+## Installation
+
+### Install via asdf
+
+```shell
+asdf plugin add selleo https://github.com/selleo/asdf-cli.git
+asdf install selleo latest
+asdf global selleo latest
+
+selleo version
+```
+
+update:
+```shell
+asdf install selleo latest
+```
+
+### Install via homebrew
+
+If you don't use `asdf`, you can use `brew`.
+
+First time:
 ```
 brew tap Selleo/cli
 brew install selleo
@@ -11,85 +32,27 @@ Upgrade for new release:
 brew upgrade selleo
 ```
 
-or download binary for your system.
+## Commands
 
-## AWS
+Run `selleo` to see available commands:
 
-### Dev
+```shell
+selleo
 
-You can fetch secrets from AWS store parameters and run the command:
-
-```
-selleo aws dev --region eu-central-1 --path /office/dev/api npm run start
-```
-
-### Generators
-
-Generators are used to pre-generate templates that you can furhter adjust.
-
-#### Terraform
-
-Generate app environment:
-```
-selleo gen terraform app \
-  --tf-cloud-org        selleo             \
-  --tf-cloud-workspace  ict-til-production \
-  --region              eu-west-1          \
-  --stage               production         \
-  --namespace           til                \
-  --name                api                \
-  --domain              til.selleo.com     \
-  --subdomain           api
+# example commands
+selleo adr new --title "Choose database"
+selleo rand uuid4
 ```
 
-#### GitHub workflows
+Check `-h` help for command:
 
-Generate staging frontend workflow:
-```
-selleo gen github frontend      \
-  --workdir .                   \
-  --domain  staging.example.com \
-  --region  eu-west-1           \
-  --app_id  office              \
-  --stage   staging             
+```shell
+selleo rand bytes -h
+selleo crypto hmac sha256 -h
+# ...
 ```
 
-Generate production frontend workflow from subfolder and trigger build only on git tag push:
-```
-selleo gen github frontend     \
-  --workdir packages/office    \
-  --domain  example.com        \
-  --region  eu-west-1          \
-  --app_id  office             \
-  --stage   production         \
-  --tag-release
-```
-
-Generate staging backend workflow with no extra task running at the end:
-```
-selleo gen github backend           \
-  --workdir     .                   \
-  --domain      beta.example.com    \
-  --subdomain   api                 \
-  --region      eu-west-1           \
-  --ecs-cluster rails-1234          \
-  --ecs-service api                 \
-  --stage       staging             
-```
-
-Generate production backend workflow with extra task run at the end:
-```
-selleo gen github backend           \
-  --workdir     .                   \
-  --domain      example.com         \
-  --subdomain   api                 \
-  --region      eu-west-1           \
-  --ecs-cluster rails-1234          \
-  --ecs-service api                 \
-  --stage       production          \
-  --one-off     migrate             \
-  --tag-release
-```
+Some 
 
 ## About Selleo
 
