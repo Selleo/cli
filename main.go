@@ -375,6 +375,46 @@ func main() {
 						},
 					},
 					{
+						Name:  "ec2",
+						Usage: "EC2 instances",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "ls",
+								Usage: "List all EC2 instances in region.",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "region", Usage: "AWS region", Required: true},
+								},
+								Action: func(c *cli.Context) error {
+									input := &awscmd.InputEc2List{
+										Region: c.String("region"),
+									}
+									out, err := awscmd.Ec2List(context.Background(), input, c.App.Writer)
+									if out != nil {
+										for _, instance := range out.Instances {
+											fmt.Fprintf(
+												c.App.Writer,
+												"%s %s %s %s %s%15s%s %s %s %s\n",
+												instance.ID,
+												instance.Name,
+												instance.State,
+												instance.IPv4private,
+												ctc.ForegroundGreen, instance.IPv4, ctc.Reset,
+												instance.Type,
+												instance.Zone,
+												instance.LaunchTime.Format("2006-01-02"),
+											)
+										}
+									}
+									if err != nil {
+										return err
+									}
+
+									return nil
+								},
+							},
+						},
+					},
+					{
 						Name:  "ecs",
 						Usage: "Elastic Container Service",
 						Subcommands: []*cli.Command{
