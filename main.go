@@ -38,6 +38,46 @@ func main() {
 				},
 			},
 			{
+				Name:  "text",
+				Usage: "Text operations",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "diff",
+						Usage: "Show text differences",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{Name: "inline", Usage: "Show diff inline", Required: false, Value: false},
+						},
+						HelpName: "diff [--inline] <file1> <file2>",
+						Action: func(c *cli.Context) error {
+							args := c.Args().Slice()
+							if len(args) != 2 {
+								return fmt.Errorf("diff requires two path arguments")
+							}
+							a, err := os.ReadFile(args[0])
+							if err != nil {
+								return err
+							}
+							b, err := os.ReadFile(args[1])
+							if err != nil {
+								return err
+							}
+
+							fmtx.ContentDiff(c.App.Writer, string(a), string(b), c.Bool("inline"))
+
+							return nil
+						},
+					},
+					{
+						Name:  "lorem",
+						Usage: "Print Lorem Ipsum",
+						Action: func(c *cli.Context) error {
+							fmtx.Lorem(c.App.Writer)
+							return nil
+						},
+					},
+				},
+			},
+			{
 				Name:  "adr",
 				Usage: "Architecture Decision Records",
 				Subcommands: []*cli.Command{
