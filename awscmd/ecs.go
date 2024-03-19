@@ -40,6 +40,9 @@ func EcsDeploy(ctx context.Context, input *InputEcsDeploy, w io.Writer) (*OuputE
 	}
 
 	taskDef, err := ecsTaskDefinitionFromService(svc, ctx, input.Cluster, input.Service, w)
+	if err != nil {
+		return nil, err
+	}
 	taskName := *taskDef.Family
 
 	fmt.Fprintf(w, "Registering new task [%s]\n", idOneOff(taskName, ""))
