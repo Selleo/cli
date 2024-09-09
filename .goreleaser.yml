@@ -23,13 +23,13 @@ builds:
 
 brews:
   - name: selleo
-    goarm: "7"
-    tap:
+    repository:
       owner: Selleo
       name: homebrew-cli
       branch: main
       token: "{{ .Env.HOMEBREW_CLI_GITHUB_TOKEN }}"
-    folder: Formula
+    goarm: "7"
+    directory: Formula
     homepage: https://github.com/selleo/cli
     description: Selleo's CLI for better developer experience.
     license: MIT
