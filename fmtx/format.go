@@ -25,3 +25,7 @@ func OutputFormat(b []byte, format string) (string, error) {
 func FGreenln(w io.Writer, s string) {
 	fmt.Fprintf(w, "%s%s%s\n", ctc.ForegroundGreen, s, ctc.Reset)
 }
+
+func FYellowln(w io.Writer, s string) {
+	fmt.Fprintf(w, "%s%s%s\n", ctc.ForegroundYellow, s, ctc.Reset)
+}
