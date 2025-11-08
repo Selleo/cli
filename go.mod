@@ -1,6 +1,8 @@
 module github.com/Selleo/cli
 
-go 1.21
+go 1.24.0
+
+toolchain go1.24.10
 
 require (
 	github.com/aws/aws-sdk-go v1.55.5
@@ -10,10 +12,12 @@ require (
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/sergi/go-diff v1.3.1
 	github.com/urfave/cli/v2 v2.27.4
 	github.com/wzshiming/ctc v1.2.3
 	gopkg.in/ini.v1 v1.67.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -31,6 +35,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
 	golang.org/x/text v0.13.0 // indirect

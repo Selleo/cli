@@ -11,6 +11,7 @@ import (
 	"github.com/Selleo/cli/awscmd"
 	"github.com/Selleo/cli/cryptographic"
 	"github.com/Selleo/cli/fmtx"
+	"github.com/Selleo/cli/genai"
 	"github.com/Selleo/cli/generators"
 	"github.com/Selleo/cli/random"
 	"github.com/Selleo/cli/selleo"
@@ -36,6 +37,83 @@ func main() {
 				Action: func(c *cli.Context) error {
 					fmt.Fprintf(c.App.Writer, "%s\n", selleo.Version)
 					return nil
+				},
+			},
+			{
+				Name:  "llm",
+				Usage: "LLM api",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "lms",
+						Usage: "Generate Content for LMS",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "audience", Usage: "Clarify audience to better match output", Required: true, Value: "", Aliases: []string{"a"}},
+							&cli.StringFlag{Name: "style", Usage: "Describe style, toon how images should be generated", Required: true, Value: "", Aliases: []string{"s"}},
+							&cli.StringFlag{Name: "topic", Usage: "Topic for content generation", Required: true, Value: "", Aliases: []string{"t"}},
+						},
+						Action: func(c *cli.Context) error {
+							lmsGen := genai.LMSContentGenerator{
+								LLM: genai.NewLLM(),
+							}
+							err := lmsGen.GenerateProject(c.Context, genai.LMSUserInput{
+								Audience: c.String("audience"),
+								Style:    c.String("style"),
+								Topic:    c.String("topic"),
+							})
+
+							fmtx.FYellowln(c.App.Writer, "Generating..")
+							if err != nil {
+								return err
+							}
+							fmtx.FGreenln(c.App.Writer, "Done")
+
+							return nil
+						},
+					},
+					{
+						Name:  "text",
+						Usage: "Generate text response using OpenAI",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "prompt", Usage: "User prompt", Required: true, Value: "", Aliases: []string{"p"}},
+						},
+						Action: func(c *cli.Context) error {
+							out := (&generators.LLM{}).Text(c.Context, genai.LLMInput{
+								Prompt: c.String("prompt"),
+							})
+							if out.Error != nil {
+								return out.Error
+							}
+
+							fmtx.FGreenln(c.App.Writer, out.Text)
+
+							return nil
+						},
+					},
+					{
+						Name:  "image",
+						Usage: "Generate image response using OpenAI",
+						Flags: []cli.Flag{
+							&cli.StringFlag{Name: "prompt", Usage: "User prompt", Required: true, Value: "", Aliases: []string{"p"}},
+							&cli.StringFlag{Name: "out", Usage: "File output", Required: true, Value: "", Aliases: []string{"o"}},
+						},
+						Action: func(c *cli.Context) error {
+							fmtx.FYellowln(c.App.Writer, "Generating..")
+
+							err := (&generators.LLM{}).Image(
+								c.Context,
+								c.String("out"),
+								genai.LLMInput{Prompt: c.String("prompt")},
+							)
+
+							if err != nil {
+								return err
+							}
+
+							fmtx.FGreenln(c.App.Writer, "Done")
+
+							return nil
+						},
+					},
 				},
 			},
 			{
