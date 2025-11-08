@@ -28,6 +28,7 @@ type LMSContentGenerator struct {
 }
 
 type LMSConfig struct {
+	Dir      string       `yaml:"dir"`
 	Sections []LMSSection `yaml:"sections"`
 	Style    string       `yaml:"style"`
 	Topic    string       `yaml:"topic"`
@@ -39,6 +40,16 @@ type LMSSection struct {
 	Prompt string `yaml:"prompt"`
 }
 
+type LMSContent struct {
+	Chapter []LMSChapter
+	Image [][]byte
+}
+
+type LMSChapter struct {
+	Title string
+	Content string
+}
+
 func (l *LMSContentGenerator) GenerateProject(ctx context.Context, input LMSUserInput) (*LMSConfig, error) {
 	id := fmt.Sprint(time.Now().Unix())
 	dir := fmt.Sprintf("lms-%s", id)
@@ -48,6 +59,7 @@ func (l *LMSContentGenerator) GenerateProject(ctx context.Context, input LMSUser
 	}
 
 	config := &LMSConfig{
+		Dir:      dir,
 		Sections: []LMSSection{},
 		Audience: input.Audience,
 		Topic:    input.Topic,
@@ -131,3 +143,98 @@ func (l *LMSContentGenerator) GenerateProject(ctx context.Context, input LMSUser
 	return config, nil
 }
 
+func (l *LMSContentGenerator) GenerateContent(ctx context.Context, input *LMSConfig) (*LMSContent, error) {
+	content := &LMSContent{}
+	content.Image = make([][]byte, len(input.Sections))
+	content.Chapter = make([]LMSChapter, len(input.Sections))
+
+	lock := sync.Mutex{}
+	g := new(errgroup.Group)
+	g.SetLimit(8)
+	for i, section := range input.Sections {
+		id := fmt.Sprintf("content-%03d.md", i+1)
+		g.Go(func() error {
+			out := l.LLM.GenerateText(ctx, LLMInput{
+				Prompt: `
+				You are a LMS content creator.
+
+				Based on the AUDIENCE and CHAPTER overview, create a single text based lesson
+				about the topic that best matches audience and given chapter.
+				Output should be markdown. Skip the tile in the markdown.
+
+				Here is the data:
+				## Audience
+				` + input.Audience + `
+				## Main topic
+				` + input.Topic + `
+				## Chapter title
+				` + section.Title + `
+				## Chapter guideline` +
+				section.Prompt,
+			})
+			if out.Error == nil {
+				lock.Lock()
+				content.Chapter[i] = LMSChapter{
+					Title: section.Title,
+					Content: out.Text,
+				}
+				lock.Unlock()
+				f, err := os.Create(path.Join(input.Dir, id))
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				f.Write([]byte("# "+content.Chapter[i].Title))
+				f.Write([]byte("\n"))
+				f.Write([]byte(content.Chapter[i].Content))
+			}
+			return out.Error
+		})
+	}
+	for i, section := range input.Sections {
+		id := fmt.Sprintf("image-%03d.png", i+1)
+		g.Go(func() error {
+			out := l.LLM.GenerateImage(ctx, LLMInput{
+				Prompt: `
+				You are a LMS content illustrator.
+
+				Based on the AUDIENCE, CHAPTER overview and STYLE, create an image
+				about the topic that best matches audience and given chapter.
+
+				Image should NOT contain any text.
+
+
+				Here is the DATA:
+
+				## Image STYLE:
+				`+ input.Style +`
+				## Audience
+				` + input.Audience + `
+				## Main topic
+				` + input.Topic + `
+				## Chapter title
+				` + section.Title + `
+				## Chapter guideline` +
+				section.Prompt,
+			})
+			if out.Error == nil {
+				lock.Lock()
+				content.Image[i] = out.PNG
+				lock.Unlock()
+				f, err := os.Create(path.Join(input.Dir, id))
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				f.Write(out.PNG)
+			}
+			return out.Error
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
+}

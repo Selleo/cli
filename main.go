@@ -55,16 +55,23 @@ func main() {
 							lmsGen := genai.LMSContentGenerator{
 								LLM: genai.NewLLM(),
 							}
-							err := lmsGen.GenerateProject(c.Context, genai.LMSUserInput{
+
+							fmtx.FYellowln(c.App.Writer, "Generating structure..")
+							lmsConfig, err := lmsGen.GenerateProject(c.Context, genai.LMSUserInput{
 								Audience: c.String("audience"),
 								Style:    c.String("style"),
 								Topic:    c.String("topic"),
 							})
-
-							fmtx.FYellowln(c.App.Writer, "Generating..")
 							if err != nil {
 								return err
 							}
+
+							fmtx.FYellowln(c.App.Writer, "Generating content..")
+							_, err = lmsGen.GenerateContent(c.Context, lmsConfig)
+							if err != nil {
+								return err
+							}
+
 							fmtx.FGreenln(c.App.Writer, "Done")
 
 							return nil
