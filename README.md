@@ -42,6 +42,8 @@ selleo
 # example commands
 selleo adr new --title "Choose database"
 selleo rand uuid4
+selleo crypto jwt encode --secret s3cret --payload '{"sub":"1"}' --exp 1h
+selleo crypto jwt decode --token eyJ... --secret s3cret
 ```
 
 Check `-h` help for command:

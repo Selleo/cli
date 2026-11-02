@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -249,6 +250,73 @@ func main() {
 										"%s\n",
 										out,
 									)
+									return nil
+								},
+							},
+						},
+					},
+					{
+						Name:  "jwt",
+						Usage: "JSON Web Token (HMAC: HS256|HS384|HS512)",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "encode",
+								Usage: "Sign a JSON payload into a JWT",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "secret", Usage: "Secret key to sign the token", Required: true},
+									&cli.StringFlag{Name: "payload", Usage: "JSON object with claims", Required: false, Value: "{}"},
+									&cli.StringFlag{Name: "alg", Usage: "Signing algorithm (HS256|HS384|HS512)", Required: false, Value: "HS256"},
+									&cli.DurationFlag{Name: "exp", Usage: "Set iat to now and exp to now + duration (e.g. 1h, 30m)", Required: false},
+								},
+								Action: func(c *cli.Context) error {
+									dec := json.NewDecoder(strings.NewReader(c.String("payload")))
+									dec.UseNumber()
+									var payload map[string]any
+									if err := dec.Decode(&payload); err != nil {
+										return fmt.Errorf("invalid payload, expected JSON object: %w", err)
+									}
+									if payload == nil {
+										payload = map[string]any{}
+									}
+									if exp := c.Duration("exp"); exp > 0 {
+										now := time.Now()
+										payload["iat"] = now.Unix()
+										payload["exp"] = now.Add(exp).Unix()
+									}
+
+									token, err := cryptographic.JWTEncode(c.String("alg"), []byte(c.String("secret")), payload)
+									if err != nil {
+										return err
+									}
+									fmt.Fprintf(c.App.Writer, "%s\n", token)
+									return nil
+								},
+							},
+							{
+								Name:  "decode",
+								Usage: "Decode a JWT (verifies signature when --secret is given)",
+								Flags: []cli.Flag{
+									&cli.StringFlag{Name: "token", Usage: "Token to decode", Required: true},
+									&cli.StringFlag{Name: "secret", Usage: "Secret key to verify the signature", Required: false},
+								},
+								Action: func(c *cli.Context) error {
+									var secret []byte
+									if c.IsSet("secret") {
+										secret = []byte(c.String("secret"))
+									}
+									token, err := cryptographic.JWTDecode(c.String("token"), secret)
+									if err != nil {
+										return err
+									}
+									out, err := json.MarshalIndent(map[string]any{
+										"header":   token.Header,
+										"payload":  token.Payload,
+										"verified": token.Verified,
+									}, "", "  ")
+									if err != nil {
+										return err
+									}
+									fmt.Fprintf(c.App.Writer, "%s\n", out)
 									return nil
 								},
 							},
